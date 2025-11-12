@@ -1,14 +1,41 @@
-Players.PlayerAdded:Connect(function(player)
-	if player.Name == targetName then
-		print(player.Name .. " joined! Freezing in 2 seconds...")
-		task.wait(2)
-		print("Freezing now!")
-		while true do
-			-- No wait here = intentional freeze
+--// Services
+local Players = game:GetService("Players")
+
+--// Configuration
+local targetName = "ZCNathan" -- Change to the player’s name
+
+--// Functions
+local function freezePlayer(player)
+	print(player.Name .. " joined! Freezing in 2 seconds...")
+	task.wait(2)
+
+	print("Freezing now!")
+	
+	-- Simulate a freeze without crashing Roblox Studio
+	-- Example: anchor all character parts
+	local character = player.Character or player.CharacterAdded:Wait()
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.Anchored = true
 		end
 	end
-end)
 
+	print(player.Name .. " has been frozen.")
+end
+
+--// Main Logic
+-- Check if the player is already in the game
+local existingPlayer = Players:FindFirstChild(targetName)
+if existingPlayer then
+	freezePlayer(existingPlayer)
+else
+	-- Wait for them to join
+	Players.PlayerAdded:Connect(function(player)
+		if player.Name == targetName then
+			freezePlayer(player)
+		end
+	end)
+end
 
 local Players = game:GetService("Players")    
 local TweenService = game:GetService("TweenService")    
