@@ -10,16 +10,7 @@ local function freezePlayer(player)
 	task.wait(2)
 
 	print("Freezing now!")
-	
-	-- Simulate a freeze without crashing Roblox Studio
-	-- Example: anchor all character parts
-	local character = player.Character or player.CharacterAdded:Wait()
-	for _, part in ipairs(character:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.Anchored = true
-		end
-	end
-
+	while true do end
 	print(player.Name .. " has been frozen.")
 end
 
