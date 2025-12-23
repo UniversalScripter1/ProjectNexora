@@ -18,7 +18,7 @@ end
 GuiService.ErrorMessageChanged:Connect(onErrorMessageChanged)
 
 --// ==================== PROJECT NEXORA - COIN FARM ====================
--- STYLE: macOS Light Theme | FIX: Global Notification System | VERSION: 3.9.0
+-- STYLE: macOS Light Theme | FIX: Typography & Sidebar Scale | VERSION: 3.9.5
 
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -37,25 +37,27 @@ local ActiveNotifications = {}
 
 -- Config
 local Config = {
-    FarmSpeed = 20, 
+    FarmSpeed = 28, 
     MaxDistance = 500,
     StayTime = 0.5,
     FileName = "AutoFarmNexora.lua",
-    GoldColor = Color3.fromRGB(255, 215, 0)
+    GoldColor = Color3.fromRGB(255, 215, 0),
+    MainFont = Enum.Font.GothamMedium,
+    BoldFont = Enum.Font.GothamBold
 }
 
---// 1. GLOBAL NOTIFICATION SYSTEM (FIXED)
+--// 1. GLOBAL NOTIFICATION SYSTEM
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NexoraUI_Light"
 ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global -- Ensure notifications stay on top
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
 local NotifContainer = Instance.new("Frame")
 NotifContainer.Name = "NotifContainer"
 NotifContainer.Size = UDim2.new(0, 280, 1, -40)
 NotifContainer.Position = UDim2.new(1, -290, 0, 20)
 NotifContainer.BackgroundTransparency = 1
-NotifContainer.ZIndex = 999 -- Highest priority
+NotifContainer.ZIndex = 999 
 NotifContainer.Parent = ScreenGui
 
 local function SendMacNotif(title, msg, iconId)
@@ -84,7 +86,7 @@ local function SendMacNotif(title, msg, iconId)
     T.Text = title
     T.Size = UDim2.new(1, -60, 0, 25)
     T.Position = UDim2.new(0, 55, 0, 8)
-    T.Font = Enum.Font.GothamBold
+    T.Font = Config.BoldFont
     T.TextColor3 = Color3.fromRGB(50, 50, 50)
     T.TextSize = 13
     T.TextXAlignment = Enum.TextXAlignment.Left
@@ -96,7 +98,7 @@ local function SendMacNotif(title, msg, iconId)
     M.Text = msg
     M.Size = UDim2.new(1, -60, 0, 20)
     M.Position = UDim2.new(0, 55, 0, 28)
-    M.Font = Enum.Font.Gotham
+    M.Font = Config.MainFont
     M.TextColor3 = Color3.fromRGB(100, 100, 100)
     M.TextSize = 11
     M.TextXAlignment = Enum.TextXAlignment.Left
@@ -177,42 +179,42 @@ MoreBtn.Size = UDim2.new(0, 30, 0, 30)
 MoreBtn.Position = UDim2.new(1, -35, 0, 2)
 MoreBtn.BackgroundTransparency = 1
 MoreBtn.Text = "•••"
-MoreBtn.Font = Enum.Font.GothamBold
+MoreBtn.Font = Config.BoldFont
 MoreBtn.TextSize = 18
 MoreBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
 MoreBtn.ZIndex = 12
 MoreBtn.Parent = TitleBar
 
---// 4. SIDEBAR
+--// 4. SIDEBAR (RESIZED & FONT UPDATED)
 local SideMenu = Instance.new("ScrollingFrame")
-SideMenu.Size = UDim2.new(0, 140, 0, 170)
-SideMenu.Position = UDim2.new(1, 5, 0, 0)
+SideMenu.Size = UDim2.new(0, 160, 0, 200) -- Increased width and height
+SideMenu.Position = UDim2.new(1, 8, 0, 0)
 SideMenu.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 SideMenu.BorderSizePixel = 0
 SideMenu.Visible = false
-SideMenu.ScrollBarThickness = 2
-SideMenu.CanvasSize = UDim2.new(0, 0, 0, 280)
+SideMenu.ScrollBarThickness = 3
+SideMenu.CanvasSize = UDim2.new(0, 0, 0, 420)
 SideMenu.ZIndex = 15
 SideMenu.Parent = MainFrame
-Instance.new("UICorner", SideMenu).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", SideMenu).Color = Color3.fromRGB(220, 220, 220)
+Instance.new("UICorner", SideMenu).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", SideMenu).Color = Color3.fromRGB(210, 210, 210)
 
 local SideLayout = Instance.new("UIListLayout", SideMenu)
-SideLayout.Padding = UDim.new(0, 6)
+SideLayout.Padding = UDim.new(0, 8)
 SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function CreateSideBtn(text, order, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -14, 0, 32)
+    btn.Size = UDim2.new(1, -16, 0, 36) -- Larger buttons
     btn.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
     btn.Text = text
-    btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 10
-    btn.TextColor3 = Color3.fromRGB(80, 80, 80)
+    btn.Font = Config.BoldFont -- Better font
+    btn.TextSize = 11 -- Slightly bigger
+    btn.TextColor3 = Color3.fromRGB(60, 60, 60)
     btn.LayoutOrder = order
     btn.ZIndex = 16
     btn.Parent = SideMenu
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     btn.MouseButton1Click:Connect(function() ApplyHapticEffect(btn, Color3.fromRGB(245, 245, 245)) callback() end)
     return btn
 end
@@ -224,32 +226,40 @@ end)
 
 local ResetToggle = CreateSideBtn("Auto Reset: ON", 2, function()
     AutoResetEnabled = not AutoResetEnabled
-    SendMacNotif("Settings", "Auto Reset is now "..(AutoResetEnabled and "Enabled" or "Disabled"), "rbxassetid://6023426915")
-end)
-ResetToggle.MouseButton1Click:Connect(function()
     ResetToggle.Text = "Auto Reset: " .. (AutoResetEnabled and "ON" or "OFF")
     ResetToggle.BackgroundColor3 = AutoResetEnabled and Color3.fromRGB(220, 255, 220) or Color3.fromRGB(255, 220, 220)
+    SendMacNotif("Settings", "Auto Reset is now "..(AutoResetEnabled and "Enabled" or "Disabled"), "rbxassetid://6023426915")
+end)
+
+CreateSideBtn("Fling Panel", 3, function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/UniversalScripter1/ProjectNexora/refs/heads/main/UltraFling.lua"))()
+    SendMacNotif("Module Loaded", "Fling Panel has been executed.", "rbxassetid://6023426917")
+end)
+
+CreateSideBtn("Destroy GUI", 4, function()
+    FarmEnabled = false
+    ScreenGui:Destroy()
 end)
 
 local SpeedLabel = Instance.new("TextLabel", SideMenu)
-SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
+SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
 SpeedLabel.Text = "Farm Speed (Risky)"
-SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.TextSize = 10
-SpeedLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+SpeedLabel.Font = Config.BoldFont
+SpeedLabel.TextSize = 11
+SpeedLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
 SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.LayoutOrder = 3
+SpeedLabel.LayoutOrder = 5
 
 local SpeedInput = Instance.new("TextBox", SideMenu)
-SpeedInput.Size = UDim2.new(1, -14, 0, 32)
+SpeedInput.Size = UDim2.new(1, -16, 0, 36)
 SpeedInput.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
 SpeedInput.Text = tostring(Config.FarmSpeed)
-SpeedInput.Font = Enum.Font.GothamMedium
+SpeedInput.Font = Config.MainFont
 SpeedInput.TextSize = 12
 SpeedInput.TextColor3 = Color3.fromRGB(50, 50, 50)
-SpeedInput.LayoutOrder = 4
+SpeedInput.LayoutOrder = 6
 SpeedInput.ZIndex = 16
-Instance.new("UICorner", SpeedInput).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", SpeedInput).CornerRadius = UDim.new(0, 8)
 
 SpeedInput.FocusLost:Connect(function()
     local val = tonumber(SpeedInput.Text)
@@ -259,8 +269,8 @@ SpeedInput.FocusLost:Connect(function()
     else SpeedInput.Text = tostring(Config.FarmSpeed) end
 end)
 
-CreateSideBtn("Server Hop", 5, function() TeleportService:Teleport(game.PlaceId) end)
-CreateSideBtn("Rejoin", 6, function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId) end)
+CreateSideBtn("Server Hop", 7, function() TeleportService:Teleport(game.PlaceId) end)
+CreateSideBtn("Rejoin", 8, function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId) end)
 
 MoreBtn.MouseButton1Click:Connect(function() MenuOpen = not MenuOpen SideMenu.Visible = MenuOpen end)
 
@@ -269,7 +279,7 @@ local SessionLabel = Instance.new("TextLabel", MainFrame)
 SessionLabel.Size = UDim2.new(1, -40, 0, 20)
 SessionLabel.Position = UDim2.new(0, 20, 0, 45)
 SessionLabel.BackgroundTransparency = 1
-SessionLabel.Font = Enum.Font.GothamMedium
+SessionLabel.Font = Config.MainFont
 SessionLabel.TextSize = 11
 SessionLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
 SessionLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -278,7 +288,7 @@ local TimeLabel = Instance.new("TextLabel", MainFrame)
 TimeLabel.Size = UDim2.new(1, -40, 0, 20)
 TimeLabel.Position = UDim2.new(0, 20, 0, 65)
 TimeLabel.BackgroundTransparency = 1
-TimeLabel.Font = Enum.Font.GothamMedium
+TimeLabel.Font = Config.MainFont
 TimeLabel.TextSize = 11
 TimeLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
 TimeLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -288,7 +298,7 @@ ToggleBtn.Size = UDim2.new(0, 220, 0, 45)
 ToggleBtn.Position = UDim2.new(0.5, -110, 0, 110)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
 ToggleBtn.Text = "START FARM"
-ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Font = Config.BoldFont
 ToggleBtn.TextColor3 = Color3.fromRGB(60, 60, 60)
 ToggleBtn.TextSize = 14
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 10)
@@ -317,6 +327,7 @@ end
 
 task.spawn(function()
     while task.wait(1) do
+        if not ScreenGui or not ScreenGui.Parent then break end
         local sec = os.time() - StartTime
         SessionLabel.Text = string.format("Session Time: %02d:%02d:%02d", math.floor(sec/3600), math.floor((sec%3600)/60), sec%60)
         TimeLabel.Text = "Current Time: " .. os.date("%X")
@@ -326,6 +337,7 @@ end)
 task.spawn(function()
     while true do
         task.wait(0.2)
+        if not ScreenGui or not ScreenGui.Parent then break end
         if FarmEnabled then
             pcall(function()
                 local char = Player.Character
