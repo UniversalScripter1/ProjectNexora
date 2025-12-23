@@ -1,0 +1,301 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local Player = Players.LocalPlayer
+
+-- Clean up
+if CoreGui:FindFirstChild("NexoraMacLightGUI") then
+    CoreGui.NexoraMacLightGUI:Destroy()
+end
+
+-- Global Settings
+getgenv().NexoraSettings = {
+    Notifications = true
+}
+
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NexoraMacLightGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
+
+-- Notification Logic (Fixed Stacking)
+local NotifHolder = Instance.new("Frame", ScreenGui)
+NotifHolder.Name = "NotifHolder"
+NotifHolder.Size = UDim2.new(0, 250, 1, -40)
+NotifHolder.Position = UDim2.new(1, -260, 0, 20)
+NotifHolder.BackgroundTransparency = 1
+NotifHolder.ZIndex = 200
+
+local UIListLayout = Instance.new("UIListLayout", NotifHolder)
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+local function SendMacNotif(title, msg)
+    if not getgenv().NexoraSettings.Notifications then return end
+    
+    local NotifFrame = Instance.new("Frame", NotifHolder)
+    NotifFrame.Name = "Notif"
+    NotifFrame.Size = UDim2.new(1, 0, 0, 60)
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    NotifFrame.BackgroundTransparency = 1 -- Start invisible for fade-in
+    
+    local Corner = Instance.new("UICorner", NotifFrame)
+    local Stroke = Instance.new("UIStroke", NotifFrame)
+    Stroke.Color = Color3.fromRGB(220, 220, 220)
+    Stroke.Transparency = 1
+
+    local T = Instance.new("TextLabel", NotifFrame)
+    T.Text, T.Size, T.Position, T.Font, T.TextSize = title:upper(), UDim2.new(1, -20, 0, 25), UDim2.new(0, 12, 0, 5), Enum.Font.GothamBold, 11
+    T.BackgroundTransparency, T.TextColor3, T.TextXAlignment = 1, Color3.fromRGB(50, 50, 50), Enum.TextXAlignment.Left
+    T.TextTransparency = 1
+
+    local M = Instance.new("TextLabel", NotifFrame)
+    M.Text, M.Size, M.Position, M.Font, M.TextSize = msg, UDim2.new(1, -24, 0, 25), UDim2.new(0, 12, 0, 25), Enum.Font.Gotham, 11
+    M.BackgroundTransparency, M.TextColor3, M.TextXAlignment, M.TextWrapped = 1, Color3.fromRGB(120, 120, 120), Enum.TextXAlignment.Left, true
+    M.TextTransparency = 1
+
+    -- In Animation
+    TweenService:Create(NotifFrame, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(Stroke, TweenInfo.new(0.4), {Transparency = 0}):Play()
+    TweenService:Create(T, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+    TweenService:Create(M, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+    
+    task.delay(3, function() 
+        if NotifFrame then
+            local out = TweenService:Create(NotifFrame, TweenInfo.new(0.4), {BackgroundTransparency = 1})
+            TweenService:Create(Stroke, TweenInfo.new(0.4), {Transparency = 1}):Play()
+            TweenService:Create(T, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
+            TweenService:Create(M, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
+            out:Play()
+            out.Completed:Wait()
+            NotifFrame:Destroy() 
+        end
+    end)
+end
+
+-- Death Monitor
+local function MonitorPlayer(p)
+    local function ConnectCharacter(char)
+        local hum = char:WaitForChild("Humanoid", 10)
+        if hum then
+            hum.Died:Connect(function()
+                SendMacNotif("Target Neutralized", p.DisplayName .. " has died.")
+            end)
+        end
+    end
+    if p.Character then ConnectCharacter(p.Character) end
+    p.CharacterAdded:Connect(ConnectCharacter)
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= Player then MonitorPlayer(p) end
+end
+Players.PlayerAdded:Connect(MonitorPlayer)
+
+local function AddCorner(p, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = r or UDim.new(0, 10)
+    c.Parent = p
+end
+
+-- Main UI Frame
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 310, 0, 410)
+MainFrame.Position = UDim2.new(0.5, -155, 0.5, -205)
+MainFrame.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
+MainFrame.ClipsDescendants = true
+AddCorner(MainFrame)
+
+-- GESTURE BAR
+local GestureHitbox = Instance.new("TextButton", ScreenGui)
+GestureHitbox.Size, GestureHitbox.Position, GestureHitbox.BackgroundTransparency = UDim2.new(0, 310, 0, 20), UDim2.new(0.5, -155, 0.5, -225), 1
+GestureHitbox.Text = ""
+GestureHitbox.ZIndex = 50
+local GestureVisual = Instance.new("Frame", GestureHitbox)
+GestureVisual.Size, GestureVisual.Position, GestureVisual.BackgroundColor3 = UDim2.new(0.5, 0, 0, 4), UDim2.new(0.25, 0, 0.5, -2), Color3.fromRGB(150, 150, 150)
+GestureVisual.BackgroundTransparency = 0.5
+AddCorner(GestureVisual, UDim.new(1, 0))
+
+-- Dragging Logic
+local dragging, dragStart, startPos, startPosG
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true; dragStart = input.Position; startPos = MainFrame.Position; startPosG = GestureHitbox.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        GestureHitbox.Position = UDim2.new(startPosG.X.Scale, startPosG.X.Offset + delta.X, startPosG.Y.Scale, startPosG.Y.Offset + delta.Y)
+    end
+end)
+
+-- Title Bar
+local TitleBar = Instance.new("Frame", MainFrame)
+TitleBar.Size, TitleBar.BackgroundColor3, TitleBar.ZIndex = UDim2.new(1, 0, 0, 38), Color3.fromRGB(225, 225, 225), 10
+AddCorner(TitleBar)
+
+-- MAC LIGHTS
+local function CreateLight(color, pos)
+    local l = Instance.new("Frame", TitleBar)
+    l.Size = UDim2.new(0, 11, 0, 11)
+    l.Position = UDim2.new(0, pos, 0.5, -5.5)
+    l.BackgroundColor3 = color
+    l.ZIndex = 15
+    AddCorner(l, UDim.new(1, 0))
+end
+CreateLight(Color3.fromRGB(255, 95, 87), 15)
+CreateLight(Color3.fromRGB(255, 189, 46), 34)
+CreateLight(Color3.fromRGB(40, 201, 64), 53)
+
+local Title = Instance.new("TextLabel", TitleBar)
+Title.Size, Title.Position, Title.BackgroundTransparency, Title.ZIndex = UDim2.new(1, -120, 1, 0), UDim2.new(0, 80, 0, 0), 1, 11
+Title.Text, Title.TextColor3, Title.Font, Title.TextSize, Title.TextXAlignment = "PROJECT NEXORA | ULTRA FLING", Color3.fromRGB(50, 50, 50), Enum.Font.GothamBold, 12, Enum.TextXAlignment.Left
+
+-- 3 Dots Menu
+local MenuBtn = Instance.new("TextButton", TitleBar)
+MenuBtn.Size, MenuBtn.Position, MenuBtn.BackgroundTransparency, MenuBtn.ZIndex = UDim2.new(0, 30, 0, 30), UDim2.new(1, -35, 0, 4), 1, 100
+MenuBtn.Text, MenuBtn.TextColor3, MenuBtn.Font, MenuBtn.TextSize = "•••", Color3.fromRGB(100, 100, 100), Enum.Font.GothamBold, 18
+
+local SettingsPanel = Instance.new("Frame", MainFrame)
+SettingsPanel.Size = UDim2.new(0, 160, 0, 50)
+SettingsPanel.Position = UDim2.new(1, -170, 0, 45)
+SettingsPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SettingsPanel.Visible = false
+SettingsPanel.ZIndex = 150
+AddCorner(SettingsPanel, UDim.new(0, 8))
+local PanelStroke = Instance.new("UIStroke", SettingsPanel)
+PanelStroke.Color = Color3.fromRGB(210, 210, 210)
+
+MenuBtn.MouseButton1Click:Connect(function() SettingsPanel.Visible = not SettingsPanel.Visible end)
+
+local function CreateSwitch(parent, text, default, callback)
+    local Frame = Instance.new("Frame", parent); Frame.Size, Frame.BackgroundTransparency, Frame.Position, Frame.ZIndex = UDim2.new(1, -10, 0, 35), 1, UDim2.new(0, 5, 0, 7), 151
+    local Label = Instance.new("TextLabel", Frame); Label.Size, Label.Text, Label.Font, Label.TextSize, Label.TextColor3, Label.BackgroundTransparency, Label.ZIndex = UDim2.new(1, -45, 1, 0), text, Enum.Font.Gotham, 10, Color3.fromRGB(80, 80, 80), 1, 152; Label.TextXAlignment = Enum.TextXAlignment.Left
+    local ToggleBG = Instance.new("Frame", Frame); ToggleBG.Size, ToggleBG.Position, ToggleBG.BackgroundColor3, ToggleBG.ZIndex = UDim2.new(0, 34, 0, 18), UDim2.new(1, -36, 0.5, -9), (default and Color3.fromRGB(0, 122, 255) or Color3.fromRGB(200, 200, 200)), 152; AddCorner(ToggleBG, UDim.new(1, 0))
+    local Circle = Instance.new("Frame", ToggleBG); Circle.Size, Circle.Position, Circle.BackgroundColor3, Circle.ZIndex = UDim2.new(0, 14, 0, 14), (default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)), Color3.fromRGB(255, 255, 255), 153; AddCorner(Circle, UDim.new(1, 0))
+    local Click = Instance.new("TextButton", Frame); Click.Size, Click.BackgroundTransparency, Click.Text, Click.ZIndex = UDim2.new(1,0,1,0), 1, "", 160
+    Click.MouseButton1Click:Connect(function()
+        default = not default
+        Circle.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        ToggleBG.BackgroundColor3 = default and Color3.fromRGB(0, 122, 255) or Color3.fromRGB(200, 200, 200)
+        callback(default)
+    end)
+end
+CreateSwitch(SettingsPanel, "Notifications", true, function(v) getgenv().NexoraSettings.Notifications = v end)
+
+-- Content Container
+local Container = Instance.new("Frame", MainFrame)
+Container.Size, Container.Position, Container.BackgroundTransparency = UDim2.new(1, -20, 1, -60), UDim2.new(0, 10, 0, 48), 1
+Container.ZIndex = 5
+
+local CounterLabel = Instance.new("TextLabel", Container)
+CounterLabel.Size, CounterLabel.Position, CounterLabel.BackgroundTransparency = UDim2.new(1, 0, 0, 20), UDim2.new(0, 0, 0, 2), 1
+CounterLabel.Text, CounterLabel.TextColor3, CounterLabel.Font, CounterLabel.TextSize, CounterLabel.TextXAlignment = "0 SELECTED", Color3.fromRGB(100, 100, 100), Enum.Font.GothamBold, 12, Enum.TextXAlignment.Left
+
+-- Watermark
+local WatermarkText = Instance.new("TextLabel", MainFrame)
+WatermarkText.Size = UDim2.new(0, 120, 0, 15)
+WatermarkText.Position = UDim2.new(0, 10, 1, -18)
+WatermarkText.BackgroundTransparency = 1
+WatermarkText.Text = "Reworked by @Naytansu1 on tiktok"
+WatermarkText.TextColor3 = Color3.fromRGB(180, 180, 180)
+WatermarkText.Font = Enum.Font.Gotham; WatermarkText.TextSize = 10; WatermarkText.TextXAlignment = Enum.TextXAlignment.Left; WatermarkText.ZIndex = 5
+
+local SelectionFrame = Instance.new("ScrollingFrame", Container)
+SelectionFrame.Position, SelectionFrame.Size, SelectionFrame.BackgroundColor3, SelectionFrame.BorderSizePixel, SelectionFrame.ScrollBarThickness = UDim2.new(0, 0, 0, 25), UDim2.new(1, 0, 0, 215), Color3.fromRGB(255, 255, 255), 0, 2
+SelectionFrame.ZIndex = 6
+AddCorner(SelectionFrame, UDim.new(0, 6))
+
+local SelectedTargets = {}
+local FlingActive = false
+local function UpdateCounter() local c = 0; for _ in pairs(SelectedTargets) do c = c + 1 end; CounterLabel.Text = c .. " SELECTED" end
+
+local function RefreshList()
+    for _, child in pairs(SelectionFrame:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
+    local y = 5
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= Player then
+            local Entry = Instance.new("Frame", SelectionFrame); Entry.Size, Entry.Position, Entry.BackgroundColor3 = UDim2.new(1, -10, 0, 35), UDim2.new(0, 5, 0, y), Color3.fromRGB(248, 248, 248); Entry.ZIndex = 7; AddCorner(Entry, UDim.new(0, 5))
+            local Name = Instance.new("TextLabel", Entry); Name.Size, Name.Position, Name.BackgroundTransparency, Name.Text, Name.Font, Name.TextSize = UDim2.new(1, -45, 1, 0), UDim2.new(0, 10, 0, 0), 1, p.DisplayName, Enum.Font.GothamBold, 13; Name.TextColor3, Name.TextXAlignment, Name.ZIndex = Color3.fromRGB(60, 60, 60), Enum.TextXAlignment.Left, 8
+            local Indicator = Instance.new("Frame", Entry); Indicator.Size, Indicator.Position, Indicator.BackgroundColor3 = UDim2.new(0, 10, 0, 10), UDim2.new(1, -22, 0.5, -5), (SelectedTargets[p.Name] and Color3.fromRGB(0, 122, 255) or Color3.fromRGB(200, 200, 200)); Indicator.ZIndex = 8; AddCorner(Indicator, UDim.new(1, 0))
+            local Click = Instance.new("TextButton", Entry); Click.Size, Click.BackgroundTransparency, Click.Text, Click.ZIndex = UDim2.new(1,0,1,0), 1, "", 10
+            Click.MouseButton1Click:Connect(function()
+                if SelectedTargets[p.Name] then SelectedTargets[p.Name] = nil else SelectedTargets[p.Name] = p end
+                UpdateCounter(); Indicator.BackgroundColor3 = SelectedTargets[p.Name] and Color3.fromRGB(0, 122, 255) or Color3.fromRGB(200, 200, 200)
+            end)
+            y = y + 40
+        end
+    end
+    SelectionFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+-- Fling Logic
+local function SkidFling(TargetPlayer)
+    local Character = Player.Character; local RootPart = Character and Character:FindFirstChild("HumanoidRootPart"); local TCharacter = TargetPlayer.Character
+    if not TCharacter or not RootPart then return end
+    local TRoot = TCharacter:FindFirstChild("HumanoidRootPart") or TCharacter:FindFirstChild("Head")
+    local oldh = workspace.FallenPartsDestroyHeight; workspace.FallenPartsDestroyHeight = 0/0
+    local BV = Instance.new("BodyVelocity", RootPart); BV.Velocity, BV.MaxForce = Vector3.new(9e7, 9e7, 9e7), Vector3.new(9e9, 9e9, 9e9)
+    local start = tick(); repeat
+        if TRoot and Character:FindFirstChild("Humanoid") then RootPart.CFrame = TRoot.CFrame * CFrame.Angles(math.rad(math.random(0,360)), 0, 0) end
+        task.wait()
+    until tick() - start > 1 or not FlingActive
+    BV:Destroy(); workspace.FallenPartsDestroyHeight = oldh
+end
+
+local function CreateNexoraBtn(text, color, pos, size)
+    local btn = Instance.new("TextButton", Container); btn.Size, btn.Position, btn.BackgroundColor3, btn.Text, btn.TextColor3, btn.Font, btn.TextSize = size, pos, color, text:upper(), Color3.fromRGB(255, 255, 255), Enum.Font.GothamBold, 13; btn.ZIndex = 10; AddCorner(btn, UDim.new(0, 6)); return btn
+end
+
+local StartBtn = CreateNexoraBtn("START FLING", Color3.fromRGB(0, 122, 255), UDim2.new(0, 0, 0, 250), UDim2.new(0.5, -5, 0, 40))
+local StopBtn = CreateNexoraBtn("STOP", Color3.fromRGB(215, 215, 215), UDim2.new(0.5, 5, 0, 250), UDim2.new(0.5, -5, 0, 40))
+StopBtn.TextColor3 = Color3.fromRGB(50, 50, 50)
+local AllBtn = CreateNexoraBtn("ALL", Color3.fromRGB(230, 230, 230), UDim2.new(0, 0, 0, 300), UDim2.new(0.5, -5, 0, 30)); AllBtn.TextColor3 = Color3.fromRGB(50, 50, 50)
+local ClearBtn = CreateNexoraBtn("CLEAR", Color3.fromRGB(230, 230, 230), UDim2.new(0.5, 5, 0, 300), UDim2.new(0.5, -5, 0, 30)); ClearBtn.TextColor3 = Color3.fromRGB(50, 50, 50)
+
+StartBtn.MouseButton1Click:Connect(function()
+    FlingActive = true; SendMacNotif("Engine", "Flinger Active")
+    task.spawn(function()
+        while FlingActive do
+            for name, p in pairs(SelectedTargets) do if not FlingActive then break end; if p and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then SkidFling(p) end end
+            task.wait(0.1)
+        end
+    end)
+end)
+StopBtn.MouseButton1Click:Connect(function() FlingActive = false; SendMacNotif("Engine", "Flinger Stopped") end)
+AllBtn.MouseButton1Click:Connect(function() for _, p in ipairs(Players:GetPlayers()) do if p ~= Player then SelectedTargets[p.Name] = p end end; UpdateCounter(); RefreshList() end)
+ClearBtn.MouseButton1Click:Connect(function() SelectedTargets = {}; UpdateCounter(); RefreshList() end)
+
+-- Gesture Animation
+local IsMinimized = false
+GestureHitbox.MouseButton1Click:Connect(function()
+    IsMinimized = not IsMinimized
+    local targetSize = IsMinimized and UDim2.new(0, 310, 0, 38) or UDim2.new(0, 310, 0, 410)
+    
+    if not IsMinimized then 
+        Container.Visible = true
+        WatermarkText.Visible = true
+    end
+    
+    local t = TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = targetSize})
+    t:Play()
+    
+    if IsMinimized then
+        t.Completed:Connect(function()
+            if IsMinimized then
+                Container.Visible = false
+                WatermarkText.Visible = false
+                SettingsPanel.Visible = false
+            end
+        end)
+    end
+end)
+
+RefreshList()
