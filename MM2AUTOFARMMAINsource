@@ -220,7 +220,7 @@ local function CreateSideBtn(text, order, callback)
 end
 
 CreateSideBtn("Auto Execute", 1, function()
-    if writefile then writefile(Config.FileName, "loadstring(game:HttpGet('https://raw.githubusercontent.com/ProjectNexora/Main/main/CandyFarm.lua'))()") end
+    if writefile then writefile(Config.FileName, "loadstring(game:HttpGet("https://pastefy.app/YtiaY6EJ/raw"))()") end
     SendMacNotif("System", "Script saved to executor folder.", "rbxassetid://6023426926")
 end)
 
