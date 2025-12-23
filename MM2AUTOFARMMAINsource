@@ -18,7 +18,7 @@ end
 GuiService.ErrorMessageChanged:Connect(onErrorMessageChanged)
 
 --// ==================== PROJECT NEXORA - COIN FARM ====================
--- STYLE: macOS Light Theme | FIX: Typography & Sidebar Scale | VERSION: 3.9.5
+-- STYLE: macOS Light Theme | FIX: Typography & Sidebar Scale | VERSION: 3.9.6
 
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -187,7 +187,7 @@ MoreBtn.Parent = TitleBar
 
 --// 4. SIDEBAR (RESIZED & FONT UPDATED)
 local SideMenu = Instance.new("ScrollingFrame")
-SideMenu.Size = UDim2.new(0, 160, 0, 200) -- Increased width and height
+SideMenu.Size = UDim2.new(0, 160, 0, 200)
 SideMenu.Position = UDim2.new(1, 8, 0, 0)
 SideMenu.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 SideMenu.BorderSizePixel = 0
@@ -205,11 +205,11 @@ SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function CreateSideBtn(text, order, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -16, 0, 36) -- Larger buttons
+    btn.Size = UDim2.new(1, -16, 0, 36)
     btn.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
     btn.Text = text
-    btn.Font = Config.BoldFont -- Better font
-    btn.TextSize = 11 -- Slightly bigger
+    btn.Font = Config.BoldFont
+    btn.TextSize = 11
     btn.TextColor3 = Color3.fromRGB(60, 60, 60)
     btn.LayoutOrder = order
     btn.ZIndex = 16
@@ -219,8 +219,11 @@ local function CreateSideBtn(text, order, callback)
     return btn
 end
 
+-- FIXED QUOTATION ERROR BELOW
 CreateSideBtn("Auto Execute", 1, function()
-    if writefile then writefile(Config.FileName, "loadstring(game:HttpGet("https://pastefy.app/YtiaY6EJ/raw"))()") end
+    if writefile then 
+        writefile(Config.FileName, [[loadstring(game:HttpGet("https://pastefy.app/YtiaY6EJ/raw"))()]]) 
+    end
     SendMacNotif("System", "Script saved to executor folder.", "rbxassetid://6023426926")
 end)
 
