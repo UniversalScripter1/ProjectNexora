@@ -1,0 +1,169 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local camera = Workspace.CurrentCamera
+
+-- Finalized Settings
+local targetPosition = Vector3.new(-357, -7, 114)
+local sideDistance = 20
+local steps = 10
+local cooldownTime = 1
+local canClick = true
+
+-- GUI Creation
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "NexoraStealMenu"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+-- Notification Stacking Logic
+local activeNotifications = {}
+
+local function sendMacNotification(msg, accentColor)
+    local notif = Instance.new("Frame")
+    notif.Size = UDim2.new(0, 240, 0, 55)
+    notif.Position = UDim2.new(1, 30, 0.05, 0)
+    notif.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    notif.BackgroundTransparency = 0.1 
+    notif.Parent = screenGui
+    
+    Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 14)
+    
+    local stroke = Instance.new("UIStroke", notif)
+    stroke.Color = Color3.fromRGB(0, 0, 0)
+    stroke.Transparency = 0.9 -- Very subtle border
+    stroke.Thickness = 1
+    
+    local accent = Instance.new("Frame")
+    accent.Size = UDim2.new(0, 4, 0, 22)
+    accent.Position = UDim2.new(0, 10, 0.5, -11)
+    accent.BackgroundColor3 = accentColor or Color3.fromRGB(0, 122, 255)
+    accent.Parent = notif
+    Instance.new("UICorner", accent).CornerRadius = UDim.new(1, 0)
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, -45, 1, 0)
+    text.Position = UDim2.new(0, 28, 0, 0)
+    text.BackgroundTransparency = 1
+    text.Text = msg
+    text.TextColor3 = Color3.fromRGB(40, 40, 40)
+    text.Font = Enum.Font.FredokaOne -- Thick but Clean/Modern
+    text.TextSize = 13
+    text.TextXAlignment = Enum.TextXAlignment.Left
+    text.Parent = notif
+    
+    table.insert(activeNotifications, 1, notif)
+    for i, v in ipairs(activeNotifications) do
+        local targetY = 0.05 + ((i - 1) * 0.14) 
+        TweenService:Create(v, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Position = UDim2.new(1, -260, targetY, 0)
+        }):Play()
+    end
+    
+    task.delay(3, function()
+        if notif and notif.Parent then
+            TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+                Position = UDim2.new(1, 30, notif.Position.Y.Scale, 0)
+            }):Play()
+            task.wait(0.4)
+            for i, v in ipairs(activeNotifications) do
+                if v == notif then table.remove(activeNotifications, i) break end
+            end
+            notif:Destroy()
+        end
+    end)
+end
+
+-- Main Window
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 135)
+frame.Position = UDim2.new(0.5, -150, 0.5, -67)
+frame.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", frame).Color = Color3.fromRGB(210, 210, 210)
+
+-- Mac Dots
+local dotColors = {Color3.fromRGB(255, 95, 87), Color3.fromRGB(255, 189, 46), Color3.fromRGB(40, 201, 64)}
+for i, color in ipairs(dotColors) do
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 10, 0, 10)
+    dot.Position = UDim2.new(0, 15 + (i-1)*18, 0, 15)
+    dot.BackgroundColor3 = color
+    dot.Parent = frame
+    Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+end
+
+-- PROJECT NEXORA Title (FredokaOne)
+local mainTitle = Instance.new("TextLabel")
+mainTitle.Size = UDim2.new(1, 0, 0, 25)
+mainTitle.Position = UDim2.new(0, 0, 0, 35)
+mainTitle.BackgroundTransparency = 1
+mainTitle.Text = "PROJECT NEXORA | INSTANT STEAL"
+mainTitle.TextColor3 = Color3.fromRGB(25, 25, 25)
+mainTitle.Font = Enum.Font.FredokaOne -- Bold and Professional
+mainTitle.TextSize = 14
+mainTitle.Parent = frame
+
+-- Cooldown Label
+local cdLabel = Instance.new("TextLabel")
+cdLabel.Size = UDim2.new(1, 0, 0, 15)
+cdLabel.Position = UDim2.new(0, 0, 0, 65)
+cdLabel.BackgroundTransparency = 1
+cdLabel.Text = "Status: Ready"
+cdLabel.TextColor3 = Color3.fromRGB(130, 130, 130)
+cdLabel.Font = Enum.Font.FredokaOne
+cdLabel.TextSize = 10
+cdLabel.Parent = frame
+
+-- Instant Steal Button
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 240, 0, 35)
+button.Position = UDim2.new(0.5, -120, 0, 85)
+button.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+button.Text = "INSTANT STEAL"
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.FredokaOne -- Bold and Professional
+button.TextSize = 13
+button.Parent = frame
+Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
+
+-- Logic
+button.MouseButton1Click:Connect(function()
+    if not canClick then return end
+    canClick = false
+    
+    sendMacNotification("Steal Initialized...", Color3.fromRGB(0, 122, 255))
+    
+    local originalCFrame = rootPart.CFrame
+    local camCFrame = camera.CFrame
+    camera.CameraType = Enum.CameraType.Scriptable
+    camera.CFrame = camCFrame
+    
+    rootPart.CFrame = CFrame.new(targetPosition + Vector3.new(0, 3, 0))
+    for i = 1, steps do
+        rootPart.CFrame = rootPart.CFrame * CFrame.new(sideDistance/steps, 0, 0)
+        task.wait(0.01) 
+    end
+    
+    rootPart.CFrame = originalCFrame
+    camera.CameraType = Enum.CameraType.Custom
+    
+    task.spawn(function()
+        for i = cooldownTime, 1, -1 do
+            cdLabel.Text = "Cooldown: " .. i .. "s"
+            button.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+            task.wait(1)
+        end
+        cdLabel.Text = "Status: Ready"
+        button.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+        canClick = true
+        sendMacNotification("System Ready!", Color3.fromRGB(40, 201, 64))
+    end)
+end)
