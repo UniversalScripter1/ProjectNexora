@@ -1,0 +1,113 @@
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+
+local notif = {}
+local active_notifications = {}
+
+-- CONFIGURATION
+local SPACING = 75 -- Height of notification + 10px gap
+local START_Y_OFFSET = 0.65 -- Adjusted upward to avoid jump button
+local WIDTH = 300
+local HEIGHT = 65
+
+-- Function to handle the "Old goes up" logic
+local function updateStack()
+    -- We iterate through the list of active notifications
+    for i, frame in ipairs(active_notifications) do
+        -- Logic: The newest one (last in table) stays at the bottom.
+        -- Previous ones are moved up based on their distance from the end of the table.
+        local stackIndex = #active_notifications - i
+        local targetY = START_Y_OFFSET - (stackIndex * (SPACING / 1000 * 1.5)) -- Responsive calculation
+        
+        -- Use pixel-based offset for perfect accuracy
+        local targetPos = UDim2.new(1, -(WIDTH + 20), START_Y_OFFSET, -(stackIndex * SPACING))
+        
+        TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Position = targetPos
+        }):Play()
+    end
+end
+
+function notif:Notification(title, desc, font, font2, visibletime)
+    local parent = game:GetService("CoreGui") or Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "MacNotif_Stack"
+    screenGui.DisplayOrder = 999
+    screenGui.Parent = parent
+
+    -- Main Frame (Mac Style)
+    local main = Instance.new("Frame")
+    main.Name = "Main"
+    main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    main.BackgroundTransparency = 0.15
+    main.Size = UDim2.new(0, WIDTH, 0, HEIGHT)
+    main.Position = UDim2.new(1.5, 0, START_Y_OFFSET, 0) -- Starts off-screen
+    main.BorderSizePixel = 0
+    main.Parent = screenGui
+
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 14)
+    mainCorner.Parent = main
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Transparency = 0.8
+    stroke.Parent = main
+
+    -- Title and Description
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Text = title
+    titleLabel.Font = Enum.Font[font or "GothamBold"]
+    titleLabel.TextColor3 = Color3.new(1, 1, 1)
+    titleLabel.TextSize = 14
+    titleLabel.Position = UDim2.new(0, 15, 0.2, 0)
+    titleLabel.Size = UDim2.new(0, 240, 0, 20)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = main
+
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Text = desc
+    descLabel.Font = Enum.Font[font2 or "Gotham"]
+    descLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+    descLabel.TextSize = 12
+    descLabel.Position = UDim2.new(0, 15, 0.5, 0)
+    descLabel.Size = UDim2.new(0, 240, 0, 20)
+    descLabel.BackgroundTransparency = 1
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = main
+
+    -- Core Logic: Insertion
+    table.insert(active_notifications, main)
+    updateStack()
+
+    local function dismiss()
+        local index = table.find(active_notifications, main)
+        if index then
+            table.remove(active_notifications, index)
+        end
+        
+        -- Fade and Float Up sequence
+        local fadeTween = TweenService:Create(main, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+            Position = main.Position + UDim2.new(0, 0, 0, -50),
+            BackgroundTransparency = 1
+        })
+        
+        for _, v in ipairs(main:GetDescendants()) do
+            if v:IsA("TextLabel") then
+                TweenService:Create(v, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+            end
+        end
+
+        fadeTween:Play()
+        fadeTween.Completed:Connect(function()
+            screenGui:Destroy()
+            updateStack() -- Re-adjust remaining notifications to fill the gap
+        end)
+    end
+
+    task.delay(visibletime or 5, dismiss)
+end
+
+return notif
