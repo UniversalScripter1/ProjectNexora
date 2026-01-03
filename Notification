@@ -3,67 +3,128 @@ local CoreGui = game:GetService("CoreGui")
 
 local notif = {}
 local active_notifications = {}
-local SPACING = 70 -- Pixels between notifications
+local OFFSET_Y = 70 -- The height + gap between notifications
 
--- Function to shift existing notifications upward
-local function shiftNotifications()
-    for i, frame in ipairs(active_notifications) do
-        local targetPos = UDim2.new(1, -340, 0.8, -(#active_notifications - i + 1) * SPACING)
-        TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-            Position = targetPos
-        }):Play()
-    end
+-- Internal function to reposition all active notifications
+local function updatePositions()
+	for i, frame in ipairs(active_notifications) do
+		-- Calculate new position: Higher index = newer = lower on screen
+		-- We reverse the logic so index 1 (oldest) is highest up
+		local targetY = 0.8 - ((#active_notifications - i) * 0.1) 
+		-- Alternatively, using pixel offset for consistency:
+		local targetPos = UDim2.new(1, -340, 0.5, (#active_notifications - i) * OFFSET_Y)
+
+		TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			Position = targetPos
+		}):Play()
+	end
 end
 
 function notif:Notification(title, desc, font, font2, visibletime)
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "Notification_" .. title
-    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    screenGui.Parent = CoreGui
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "Notif_" .. title
+	screenGui.Parent = CoreGui
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    local main = Instance.new("Frame")
-    main.Name = "Main"
-    main.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-    main.BorderSizePixel = 0
-    main.Position = UDim2.new(1, 10, 0.8, 0) -- Start off-screen right
-    main.Size = UDim2.new(0, 331, 0, 61)
-    main.Parent = screenGui
+	-- Main Frame
+	local main = Instance.new("Frame")
+	main.Name = "Main"
+	main.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+	main.Size = UDim2.new(0, 331, 0, 61)
+	-- Start position (off-screen right)
+	main.Position = UDim2.new(1.5, 0, 0.5, 0)
+	main.Parent = screenGui
 
-    local bar = Instance.new("Frame")
-    bar.Name = "Bar"
-    bar.BackgroundColor3 = Color3.fromRGB(11, 11, 11)
-    bar.Size = UDim2.new(0, 11, 1, 0)
-    bar.Parent = main
+	local mainCorner = Instance.new("UICorner")
+	mainCorner.CornerRadius = UDim.new(0, 7)
+	mainCorner.Parent = main
 
-    local barCorner = Instance.new("UICorner")
-    barCorner.CornerRadius = UDim.new(0, 10)
-    barCorner.Parent = bar
+	local bar = Instance.new("Frame")
+	bar.Name = "Bar"
+	bar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	bar.Size = UDim2.new(0, 11, 1, 0)
+	bar.Parent = main
 
-    local mainCorner = Instance.new("UICorner")
-    mainCorner.CornerRadius = UDim.new(0, 7)
-    mainCorner.Parent = main
+	local barCorner = Instance.new("UICorner")
+	barCorner.CornerRadius = UDim.new(0, 10)
+	barCorner.Parent = bar
 
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Font = Enum.Font[font or "GothamBold"]
-    titleLabel.Text = title
-    titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0.08, 0, 0.1, 0)
-    titleLabel.Size = UDim2.new(0, 201, 0, 25)
-    titleLabel.Parent = main
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.Text = title
+	titleLabel.Font = Enum.Font[font or "GothamBold"]
+	titleLabel.TextColor3 = Color3.new(1, 1, 1)
+	titleLabel.TextSize = 14
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Position = UDim2.new(0.08, 0, 0.1, 0)
+	titleLabel.Size = UDim2.new(0, 200, 0, 25)
+	titleLabel.Parent = main
 
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Name = "Description"
-    descLabel.Font = Enum.Font[font2 or "Gotham"]
-    descLabel.Text = desc
-    descLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-    descLabel.TextSize = 13
-    descLabel.TextTruncate = Enum.TextTruncate.AtEnd
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.BackgroundTransparency = 1
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Name = "Description"
+	descLabel.Text = desc
+	descLabel.Font = Enum.Font[font2 or "Gotham"]
+	descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	descLabel.TextSize = 13
+	descLabel.TextXAlignment = Enum.TextXAlignment.Left
+	descLabel.BackgroundTransparency = 1
+	descLabel.Position = UDim2.new(0.08, 0, 0.5, 0)
+	descLabel.Size = UDim2.new(0, 200, 0, 25)
+	descLabel.Parent = main
+
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Name = "Close"
+	closeBtn.Text = "×"
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 20
+	closeBtn.TextColor3 = Color3.new(1, 1, 1)
+	closeBtn.BackgroundTransparency = 1
+	closeBtn.Position = UDim2.new(0.9, 0, 0, 0)
+	closeBtn.Size = UDim2.new(0, 30, 1, 0)
+	closeBtn.Parent = main
+
+	-- Add to tracking table
+	table.insert(active_notifications, main)
+	updatePositions()
+
+	-- Dismiss logic
+	local function dismiss()
+		-- Remove from table
+		for i, v in ipairs(active_notifications) do
+			if v == main then
+				table.remove(active_notifications, i)
+				break
+			end
+		end
+		
+		-- Animate Out (Slide right and Fade)
+		local outTween = TweenService:Create(main, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = main.Position + UDim2.new(1, 0, 0, 0),
+			BackgroundTransparency = 1
+		})
+		
+		-- Fade out elements
+		for _, child in ipairs(main:GetDescendants()) do
+			if child:IsA("TextLabel") or child:IsA("TextButton") then
+				TweenService:Create(child, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+			elseif child:IsA("Frame") then
+				TweenService:Create(child, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+			end
+		end
+
+		outTween:Play()
+		outTween.Completed:Connect(function()
+			screenGui:Destroy()
+			updatePositions() -- Move remaining ones down/up to fill the gap
+		end)
+	end
+
+	closeBtn.MouseButton1Click:Connect(dismiss)
+	task.delay(visibletime or 5, dismiss)
+end
+
+return notif
     descLabel.Position = UDim2.new(0.08, 0, 0.5, 0)
     descLabel.Size = UDim2.new(0, 250, 0, 25)
     descLabel.Parent = main
