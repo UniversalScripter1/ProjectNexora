@@ -1,6 +1,5 @@
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
-local ContentProvider = game:GetService("ContentProvider")
 
 local notif = {}
 local active_notifications = {}
@@ -8,9 +7,37 @@ local active_notifications = {}
 -- CONFIGURATION
 local SPACING = 75 
 local START_Y_OFFSET = 0.65 
-local WIDTH = 320 -- Slightly wider for icon
+local WIDTH = 320
 local HEIGHT = 65
 local ICON_SIZE = 35
+
+-- THEME DEFINITIONS
+local THEMES = {
+    ["dark"] = {
+        Background = Color3.fromRGB(30, 30, 30),
+        Stroke = Color3.fromRGB(255, 255, 255),
+        Title = Color3.fromRGB(255, 255, 255),
+        Desc = Color3.fromRGB(180, 180, 180)
+    },
+    ["light"] = {
+        Background = Color3.fromRGB(240, 240, 240),
+        Stroke = Color3.fromRGB(0, 0, 0),
+        Title = Color3.fromRGB(20, 20, 20),
+        Desc = Color3.fromRGB(60, 60, 60)
+    },
+    ["ocean"] = {
+        Background = Color3.fromRGB(10, 35, 65),
+        Stroke = Color3.fromRGB(0, 180, 255),
+        Title = Color3.fromRGB(255, 255, 255),
+        Desc = Color3.fromRGB(150, 210, 255)
+    },
+    ["red"] = {
+        Background = Color3.fromRGB(60, 10, 10),
+        Stroke = Color3.fromRGB(255, 50, 50),
+        Title = Color3.fromRGB(255, 255, 255),
+        Desc = Color3.fromRGB(255, 180, 180)
+    }
+}
 
 -- Pre-create container
 local parent = (game:GetService("RunService"):IsStudio() and Players.LocalPlayer:WaitForChild("PlayerGui")) or 
@@ -34,9 +61,11 @@ local function updateStack()
     end
 end
 
--- New Parameters: iconid (string/number), soundid (string/number)
-function notif:Notification(title, desc, font, font2, visibletime, iconid, soundid)
-    -- Play Sound if provided
+-- New Parameter: theme (string)
+function notif:Notification(title, desc, font, font2, visibletime, iconid, soundid, theme)
+    local selectedTheme = THEMES[tostring(theme):lower()] or THEMES["dark"]
+
+    -- Play Sound
     if soundid then
         local sound = Instance.new("Sound")
         sound.SoundId = "rbxassetid://" .. tostring(soundid):gsub("rbxassetid://", "")
@@ -49,7 +78,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     -- Main Frame
     local main = Instance.new("Frame")
     main.Name = "NotifFrame"
-    main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    main.BackgroundColor3 = selectedTheme.Background
     main.BackgroundTransparency = 0.15
     main.Size = UDim2.new(0, WIDTH, 0, HEIGHT)
     main.Position = UDim2.new(1.2, 0, START_Y_OFFSET, 0)
@@ -62,7 +91,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     mainCorner.Parent = main
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Color = selectedTheme.Stroke
     stroke.Transparency = 0.8
     stroke.Parent = main
 
@@ -75,15 +104,16 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
         icon.Position = UDim2.new(0, 12, 0.5, -(ICON_SIZE/2))
         icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
         icon.Image = "rbxassetid://" .. tostring(iconid):gsub("rbxassetid://", "")
+        icon.ImageColor3 = (theme == "light") and Color3.new(0,0,0) or Color3.new(1,1,1) -- Tint icon if light mode
         icon.Parent = main
-        textXOffset = 55 -- Push text to the right to make room
+        textXOffset = 55
     end
 
     -- Title and Description
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Text = title
     titleLabel.Font = Enum.Font[font or "GothamBold"]
-    titleLabel.TextColor3 = Color3.new(1, 1, 1)
+    titleLabel.TextColor3 = selectedTheme.Title
     titleLabel.TextSize = 14
     titleLabel.Position = UDim2.new(0, textXOffset, 0.2, 0)
     titleLabel.Size = UDim2.new(1, -(textXOffset + 10), 0, 20)
@@ -94,7 +124,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     local descLabel = Instance.new("TextLabel")
     descLabel.Text = desc
     descLabel.Font = Enum.Font[font2 or "Gotham"]
-    descLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+    descLabel.TextColor3 = selectedTheme.Desc
     descLabel.TextSize = 12
     descLabel.Position = UDim2.new(0, textXOffset, 0.5, 0)
     descLabel.Size = UDim2.new(1, -(textXOffset + 10), 0, 20)
