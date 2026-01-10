@@ -1,5 +1,6 @@
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local notif = {}
 local active_notifications = {}
@@ -7,7 +8,8 @@ local active_notifications = {}
 -- CONFIGURATION
 local SPACING = 75 
 local START_Y_OFFSET = 0.65 
-local WIDTH = 320
+-- Adjusted width to 330 to ensure text doesn't clip with icons
+local WIDTH = 330
 local HEIGHT = 65
 local ICON_SIZE = 35
 
@@ -40,7 +42,7 @@ local THEMES = {
 }
 
 -- Container Management
-local parent = (game:GetService("RunService"):IsStudio() and Players.LocalPlayer:WaitForChild("PlayerGui")) or 
+local parent = (RunService:IsStudio() and Players.LocalPlayer:WaitForChild("PlayerGui")) or 
                (game:GetService("CoreGui"):FindFirstChild("RobloxGui") and game:GetService("CoreGui")) or 
                Players.LocalPlayer:WaitForChild("PlayerGui")
 
@@ -56,7 +58,8 @@ end
 local function updateStack()
     for i, frame in ipairs(active_notifications) do
         local stackIndex = #active_notifications - i
-        local targetPos = UDim2.new(1, -(WIDTH + 20), START_Y_OFFSET, -(stackIndex * SPACING))
+        local targetY = START_Y_OFFSET
+        local targetPos = UDim2.new(1, -(WIDTH + 20), targetY, -(stackIndex * SPACING))
         
         TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
             Position = targetPos
@@ -67,24 +70,25 @@ end
 function notif:Notification(title, desc, font, font2, visibletime, iconid, soundid, theme)
     local selectedTheme = THEMES[tostring(theme):lower()] or THEMES["dark"]
     local displayDuration = tonumber(visibletime) or 5
+    local isDismissing = false
 
-    -- Play Sound
-    if soundid then
+    -- Sound Handling
+    if soundid and soundid ~= 0 then
         local sound = Instance.new("Sound")
         sound.SoundId = "rbxassetid://" .. tostring(soundid):gsub("rbxassetid://", "")
         sound.Volume = 0.5
         sound.Parent = game:GetService("SoundService")
         sound:Play()
-        task.delay(displayDuration + 1, function() sound:Destroy() end)
+        task.delay(displayDuration + 2, function() sound:Destroy() end)
     end
 
-    -- Main Frame
+    -- Main UI
     local main = Instance.new("Frame")
     main.Name = "NotifFrame"
     main.BackgroundColor3 = selectedTheme.Background
     main.BackgroundTransparency = 0.15
     main.Size = UDim2.new(0, WIDTH, 0, HEIGHT)
-    main.Position = UDim2.new(1.4, 0, START_Y_OFFSET, 0) -- Start fully hidden
+    main.Position = UDim2.new(1.5, 0, START_Y_OFFSET, 0)
     main.BorderSizePixel = 0
     main.ClipsDescendants = true
     main.Parent = screenGui
@@ -98,7 +102,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     stroke.Transparency = 0.8
     stroke.Parent = main
 
-    -- Icon Setup
+    -- Icon Logic
     local textXOffset = 15
     if iconid and iconid ~= "" and iconid ~= 0 then
         local icon = Instance.new("ImageLabel")
@@ -112,9 +116,9 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
         textXOffset = 55
     end
 
-    -- Labels
+    -- Text Labels
     local titleL = Instance.new("TextLabel")
-    titleL.Text = title
+    titleL.Text = tostring(title)
     titleL.Font = Enum.Font[font or "GothamBold"]
     titleL.TextColor3 = selectedTheme.Title
     titleL.TextSize = 14
@@ -125,7 +129,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     titleL.Parent = main
 
     local descL = Instance.new("TextLabel")
-    descL.Text = desc
+    descL.Text = tostring(desc)
     descL.Font = Enum.Font[font2 or "Gotham"]
     descL.TextColor3 = selectedTheme.Desc
     descL.TextSize = 12
@@ -135,20 +139,19 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     descL.TextXAlignment = Enum.TextXAlignment.Left
     descL.Parent = main
 
-    -- Insertion
     table.insert(active_notifications, main)
     updateStack()
 
-    -- DISMISS LOGIC
-    local function removeNotif()
-        -- 1. Remove from table immediately so stack updates
+    local function dismiss()
+        if isDismissing then return end
+        isDismissing = true
+        
         local idx = table.find(active_notifications, main)
         if idx then
             table.remove(active_notifications, idx)
             updateStack()
         end
 
-        -- 2. Tween Out
         local outTween = TweenService:Create(main, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
             Position = main.Position + UDim2.new(0.6, 0, 0, 0),
             BackgroundTransparency = 1
@@ -170,84 +173,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
         end)
     end
 
-    -- Start the timer
-    task.delay(displayDuration, removeNotif)
-end
-
-return notif
-    -- UI Elements (Corner, Stroke, Labels)
-    local mainCorner = Instance.new("UICorner", main)
-    mainCorner.CornerRadius = UDim.new(0, 14)
-
-    local stroke = Instance.new("UIStroke", main)
-    stroke.Color = selectedTheme.Stroke
-    stroke.Transparency = 0.8
-
-    local textXOffset = 15
-    if iconid and iconid ~= "" then
-        local icon = Instance.new("ImageLabel", main)
-        icon.BackgroundTransparency = 1
-        icon.Position = UDim2.new(0, 12, 0.5, -(ICON_SIZE/2))
-        icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
-        icon.Image = "rbxassetid://" .. tostring(iconid):gsub("rbxassetid://", "")
-        icon.ImageColor3 = (theme == "light") and Color3.new(0,0,0) or Color3.new(1,1,1)
-        textXOffset = 55
-    end
-
-    local titleLabel = Instance.new("TextLabel", main)
-    titleLabel.Text = title
-    titleLabel.Font = Enum.Font[font or "GothamBold"]
-    titleLabel.TextColor3 = selectedTheme.Title
-    titleLabel.TextSize = 14
-    titleLabel.Position = UDim2.new(0, textXOffset, 0.2, 0)
-    titleLabel.Size = UDim2.new(1, -(textXOffset + 10), 0, 20)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local descLabel = Instance.new("TextLabel", main)
-    descLabel.Text = desc
-    descLabel.Font = Enum.Font[font2 or "Gotham"]
-    descLabel.TextColor3 = selectedTheme.Desc
-    descLabel.TextSize = 12
-    descLabel.Position = UDim2.new(0, textXOffset, 0.5, 0)
-    descLabel.Size = UDim2.new(1, -(textXOffset + 10), 0, 20)
-    descLabel.BackgroundTransparency = 1
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    table.insert(active_notifications, main)
-    updateStack()
-
-    local function dismiss()
-        if main:GetAttribute("Dismissing") then return end
-        main:SetAttribute("Dismissing", true)
-        
-        local index = table.find(active_notifications, main)
-        if index then
-            table.remove(active_notifications, index)
-            updateStack() -- Shift others while this one is leaving
-        end
-        
-        -- Animation out
-        local outTween = TweenService:Create(main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-            Position = UDim2.new(1.3, 0, main.Position.Y.Scale, main.Position.Y.Offset),
-            BackgroundTransparency = 1
-        })
-
-        for _, v in ipairs(main:GetDescendants()) do
-            if v:IsA("TextLabel") or v:IsA("ImageLabel") then
-                TweenService:Create(v, TweenInfo.new(0.3), {TextTransparency = 1, ImageTransparency = 1}):Play()
-            elseif v:IsA("UIStroke") then
-                TweenService:Create(v, TweenInfo.new(0.3), {Transparency = 1}):Play()
-            end
-        end
-
-        outTween:Play()
-        outTween.Completed:Connect(function()
-            main:Destroy()
-        end)
-    end
-
-    task.delay(tonumber(visibletime) or 5, dismiss)
+    task.delay(displayDuration, dismiss)
 end
 
 return notif
