@@ -8,7 +8,6 @@ local active_notifications = {}
 -- CONFIGURATION
 local SPACING = 75 
 local START_Y_OFFSET = 0.65 
--- Adjusted width to 330 to ensure text doesn't clip with icons
 local WIDTH = 330
 local HEIGHT = 65
 local ICON_SIZE = 35
@@ -116,14 +115,14 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
         textXOffset = 55
     end
 
-    -- Text Labels
+    -- Text Labels (ADJUSTED Y POSITION)
     local titleL = Instance.new("TextLabel")
     titleL.Text = tostring(title)
     titleL.Font = Enum.Font[font or "GothamBold"]
     titleL.TextColor3 = selectedTheme.Title
     titleL.TextSize = 14
-    titleL.Position = UDim2.new(0, textXOffset, 0.2, 0)
-    titleL.Size = UDim2.new(1, -(textXOffset + 10), 0, 20)
+    titleL.Position = UDim2.new(0, textXOffset, 0.15, 0) -- Changed from 0.2 to 0.15
+    titleL.Size = UDim2.new(1, -(textXOffset + 10), 0, 22)
     titleL.BackgroundTransparency = 1
     titleL.TextXAlignment = Enum.TextXAlignment.Left
     titleL.Parent = main
@@ -133,7 +132,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     descL.Font = Enum.Font[font2 or "Gotham"]
     descL.TextColor3 = selectedTheme.Desc
     descL.TextSize = 12
-    descL.Position = UDim2.new(0, textXOffset, 0.5, 0)
+    descL.Position = UDim2.new(0, textXOffset, 0.45, 0) -- Changed from 0.5 to 0.45
     descL.Size = UDim2.new(1, -(textXOffset + 10), 0, 20)
     descL.BackgroundTransparency = 1
     descL.TextXAlignment = Enum.TextXAlignment.Left
