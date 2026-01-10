@@ -57,8 +57,7 @@ end
 local function updateStack()
     for i, frame in ipairs(active_notifications) do
         local stackIndex = #active_notifications - i
-        local targetY = START_Y_OFFSET
-        local targetPos = UDim2.new(1, -(WIDTH + 20), targetY, -(stackIndex * SPACING))
+        local targetPos = UDim2.new(1, -(WIDTH + 20), START_Y_OFFSET, -(stackIndex * SPACING))
         
         TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
             Position = targetPos
@@ -115,16 +114,19 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
         textXOffset = 55
     end
 
-    -- Text Labels (ADJUSTED Y POSITION)
+    -- Text Labels
     local titleL = Instance.new("TextLabel")
     titleL.Text = tostring(title)
     titleL.Font = Enum.Font[font or "GothamBold"]
     titleL.TextColor3 = selectedTheme.Title
     titleL.TextSize = 14
-    titleL.Position = UDim2.new(0, textXOffset, 0.15, 0) -- Changed from 0.2 to 0.15
+    titleL.Position = UDim2.new(0, textXOffset, 0.15, 0)
     titleL.Size = UDim2.new(1, -(textXOffset + 10), 0, 22)
     titleL.BackgroundTransparency = 1
     titleL.TextXAlignment = Enum.TextXAlignment.Left
+    titleL.TextYAlignment = Enum.TextYAlignment.Top -- Align to top to prevent center-drifting
+    titleL.TextWrapped = false -- Prevents \n from pushing it into desc area
+    titleL.TextTruncate = Enum.TextTruncate.AtEnd -- Cuts off text if too long
     titleL.Parent = main
 
     local descL = Instance.new("TextLabel")
@@ -132,10 +134,12 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     descL.Font = Enum.Font[font2 or "Gotham"]
     descL.TextColor3 = selectedTheme.Desc
     descL.TextSize = 12
-    descL.Position = UDim2.new(0, textXOffset, 0.45, 0) -- Changed from 0.5 to 0.45
-    descL.Size = UDim2.new(1, -(textXOffset + 10), 0, 20)
+    descL.Position = UDim2.new(0, textXOffset, 0.45, 0)
+    descL.Size = UDim2.new(1, -(textXOffset + 10), 0, 30) -- Height increased for multi-line desc
     descL.BackgroundTransparency = 1
     descL.TextXAlignment = Enum.TextXAlignment.Left
+    descL.TextYAlignment = Enum.TextYAlignment.Top
+    descL.TextWrapped = true -- Allows description to wrap properly
     descL.Parent = main
 
     table.insert(active_notifications, main)
