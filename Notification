@@ -100,6 +100,15 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     stroke.Transparency = 0.8
     stroke.Parent = main
 
+    -- Clickable Dismiss Button
+    local clickBtn = Instance.new("TextButton")
+    clickBtn.Name = "ClickButton"
+    clickBtn.Size = UDim2.new(1, 0, 1, 0)
+    clickBtn.BackgroundTransparency = 1
+    clickBtn.Text = ""
+    clickBtn.ZIndex = 10
+    clickBtn.Parent = main
+
     -- Icon Logic
     local textXOffset = 15
     if iconid and iconid ~= "" and iconid ~= 0 then
@@ -114,7 +123,7 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
         textXOffset = 55
     end
 
-    -- Text Labels
+    -- Labels
     local titleL = Instance.new("TextLabel")
     titleL.Text = tostring(title)
     titleL.Font = Enum.Font[font or "GothamBold"]
@@ -124,9 +133,9 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     titleL.Size = UDim2.new(1, -(textXOffset + 10), 0, 22)
     titleL.BackgroundTransparency = 1
     titleL.TextXAlignment = Enum.TextXAlignment.Left
-    titleL.TextYAlignment = Enum.TextYAlignment.Top -- Align to top to prevent center-drifting
-    titleL.TextWrapped = false -- Prevents \n from pushing it into desc area
-    titleL.TextTruncate = Enum.TextTruncate.AtEnd -- Cuts off text if too long
+    titleL.TextYAlignment = Enum.TextYAlignment.Top
+    titleL.TextWrapped = false
+    titleL.TextTruncate = Enum.TextTruncate.AtEnd
     titleL.Parent = main
 
     local descL = Instance.new("TextLabel")
@@ -135,11 +144,11 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
     descL.TextColor3 = selectedTheme.Desc
     descL.TextSize = 12
     descL.Position = UDim2.new(0, textXOffset, 0.45, 0)
-    descL.Size = UDim2.new(1, -(textXOffset + 10), 0, 30) -- Height increased for multi-line desc
+    descL.Size = UDim2.new(1, -(textXOffset + 10), 0, 30)
     descL.BackgroundTransparency = 1
     descL.TextXAlignment = Enum.TextXAlignment.Left
     descL.TextYAlignment = Enum.TextYAlignment.Top
-    descL.TextWrapped = true -- Allows description to wrap properly
+    descL.TextWrapped = true
     descL.Parent = main
 
     table.insert(active_notifications, main)
@@ -176,7 +185,15 @@ function notif:Notification(title, desc, font, font2, visibletime, iconid, sound
         end)
     end
 
-    task.delay(displayDuration, dismiss)
+    -- Connect Click Event
+    clickBtn.MouseButton1Click:Connect(dismiss)
+
+    -- Auto-dismiss after timer
+    task.delay(displayDuration, function()
+        if main and main.Parent then
+            dismiss()
+        end
+    end)
 end
 
 return notif
