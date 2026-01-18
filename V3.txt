@@ -1,0 +1,242 @@
+-- Version of the script: V8
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "HydroStreamzHub_Mac_V8"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- MAIN CONTAINER (The parent for both the handle and the window)
+local container = Instance.new("Frame")
+container.Size = UDim2.new(0, 220, 0, 180) -- Slightly taller to fit handle
+container.Position = UDim2.new(0.5, -110, 0.5, -90)
+container.BackgroundTransparency = 1
+container.Active = true
+container.Draggable = true -- Only the container is draggable now
+container.Parent = screenGui
+
+-- FLOATING GESTURE HANDLE (The "Phone" style bar)
+local handle = Instance.new("Frame")
+handle.Name = "GestureHandle"
+handle.Size = UDim2.new(0, 60, 0, 5)
+handle.Position = UDim2.new(0.5, -30, 0, 0) -- Positioned at the very top
+handle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+handle.BackgroundTransparency = 0.5
+handle.BorderSizePixel = 0
+handle.Parent = container
+
+local handleCorner = Instance.new("UICorner")
+handleCorner.CornerRadius = UDim.new(1, 0)
+handleCorner.Parent = handle
+
+-- Visual Feedback for Handle
+handle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        handle.BackgroundColor3 = Color3.fromRGB(40, 201, 64) -- Turns Green
+        handle.BackgroundTransparency = 0.2
+    end
+end)
+
+handle.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        handle.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Back to White
+        handle.BackgroundTransparency = 0.5
+    end
+end)
+
+-- Main Window Frame (Connected to container)
+local frame = Instance.new("Frame")
+frame.Name = "MainWindow"
+frame.Size = UDim2.new(1, 0, 0, 160)
+frame.Position = UDim2.new(0, 0, 0, 15) -- Pushed down slightly below handle
+frame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+frame.BackgroundTransparency = 0.05
+frame.BorderSizePixel = 0
+frame.ClipsDescendants = true 
+frame.Parent = container
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 10)
+uiCorner.Parent = frame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Thickness = 1
+frameStroke.Color = Color3.fromRGB(0, 0, 0)
+frameStroke.Transparency = 0.85
+frameStroke.Parent = frame
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 32)
+titleBar.BackgroundTransparency = 1
+titleBar.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 1, 0)
+titleLabel.Text = "HydroStreamz Hub"
+titleLabel.TextColor3 = Color3.fromRGB(60, 60, 60)
+titleLabel.Font = Enum.Font.GothamMedium
+titleLabel.TextSize = 13
+titleLabel.BackgroundTransparency = 1
+titleLabel.Parent = titleBar
+
+-- Traffic Lights
+local function createDot(color, xOffset)
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 10, 0, 10)
+    dot.Position = UDim2.new(0, xOffset, 0.5, -5)
+    dot.BackgroundColor3 = color
+    dot.BorderSizePixel = 0
+    dot.Parent = titleBar
+    Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+end
+createDot(Color3.fromRGB(255, 95, 87), 12)  
+createDot(Color3.fromRGB(255, 189, 46), 28) 
+createDot(Color3.fromRGB(40, 201, 64), 44) 
+
+-- Content Container
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "Content"
+contentFrame.Size = UDim2.new(1, 0, 1, -32)
+contentFrame.Position = UDim2.new(0, 0, 0, 32)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = frame
+
+-- TextBox
+local newPetTextBox = Instance.new("TextBox")
+newPetTextBox.Size = UDim2.new(0.85, 0, 0, 30)
+newPetTextBox.Position = UDim2.new(0.075, 0, 0.1, 0)
+newPetTextBox.PlaceholderText = "Search Weapon..."
+newPetTextBox.Text = ""
+newPetTextBox.BackgroundColor3 = Color3.fromRGB(225, 225, 225)
+newPetTextBox.TextColor3 = Color3.fromRGB(40, 40, 40)
+newPetTextBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+newPetTextBox.Font = Enum.Font.Gotham
+newPetTextBox.TextSize = 14
+newPetTextBox.ClearTextOnFocus = false
+newPetTextBox.Parent = contentFrame
+Instance.new("UICorner", newPetTextBox).CornerRadius = UDim.new(0, 6)
+
+-- Prediction List
+local predictionList = Instance.new("ScrollingFrame")
+predictionList.Size = UDim2.new(0.85, 0, 0, 80)
+predictionList.Position = UDim2.new(0.075, 0, 0.1, 32)
+predictionList.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
+predictionList.BorderSizePixel = 1
+predictionList.BorderColor3 = Color3.fromRGB(200, 200, 200)
+predictionList.Visible = false
+predictionList.ZIndex = 15
+predictionList.ScrollBarThickness = 2
+predictionList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+predictionList.Parent = contentFrame
+Instance.new("UICorner", predictionList).CornerRadius = UDim.new(0, 4)
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Parent = predictionList
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Action button
+local actionButton = Instance.new("TextButton")
+actionButton.Size = UDim2.new(0.85, 0, 0, 35)
+actionButton.Position = UDim2.new(0.075, 0, 0.7, 0)
+actionButton.Text = "Spawn Item"
+actionButton.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+actionButton.Font = Enum.Font.GothamBold
+actionButton.TextSize = 14
+actionButton.Parent = contentFrame
+Instance.new("UICorner", actionButton).CornerRadius = UDim.new(0, 6)
+
+-- Notification
+local function notify(msg)
+    task.spawn(function()
+        local nFrame = Instance.new("TextLabel")
+        nFrame.Size = UDim2.new(0, 160, 0, 30)
+        nFrame.Position = UDim2.new(0.5, -80, 1, 10)
+        nFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        nFrame.TextColor3 = Color3.fromRGB(40, 40, 40)
+        nFrame.Text = msg
+        nFrame.Font = Enum.Font.GothamMedium
+        nFrame.TextSize = 12
+        nFrame.Parent = screenGui
+        nFrame.ZIndex = 100
+        Instance.new("UICorner", nFrame).CornerRadius = UDim.new(0, 6)
+        Instance.new("UIStroke", nFrame).Transparency = 0.9
+        nFrame:TweenPosition(UDim2.new(0.5, -80, 0.85, 0), "Out", "Back", 0.3)
+        task.wait(1.5)
+        nFrame:TweenPosition(UDim2.new(0.5, -80, 1, 10), "In", "Sine", 0.3)
+        task.wait(0.4)
+        nFrame:Destroy()
+    end)
+end
+
+-- Logic Setup
+local folder = workspace:FindFirstChild("SpawnedWeapons") or Instance.new("Folder", workspace)
+local DataBase = require(game:GetService("ReplicatedStorage").Database.Sync.Item)
+local PlayerData = require(game:GetService("ReplicatedStorage").Modules.ProfileData)
+
+newPetTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local text = newPetTextBox.Text:lower()
+    for _, child in pairs(predictionList:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+    if text == "" then predictionList.Visible = false return end
+    local found = false
+    for key, _ in pairs(DataBase) do
+        local itemName = tostring(key)
+        if string.find(itemName:lower(), text) then
+            found = true
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -10, 0, 25)
+            btn.BackgroundTransparency = 1
+            btn.Text = "  " .. itemName
+            btn.TextColor3 = Color3.fromRGB(60, 60, 60)
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 14
+            btn.ZIndex = 20
+            btn.Parent = predictionList
+            btn.MouseButton1Click:Connect(function()
+                newPetTextBox.Text = itemName
+                predictionList.Visible = false
+            end)
+        end
+    end
+    predictionList.Visible = found
+end)
+
+actionButton.MouseButton1Click:Connect(function()
+    local typedInput = newPetTextBox.Text:match("^%s*(.-)%s*$"):lower()
+    predictionList.Visible = false
+    local matchedKey
+    for key, _ in pairs(DataBase) do if tostring(key):lower() == typedInput then matchedKey = key break end end
+    if not matchedKey then notify("❌ Not Found") return end
+    PlayerData.Weapons.Owned[matchedKey] = 1
+    local weaponTemplate = DataBase[matchedKey] and DataBase[matchedKey].Tool
+    if weaponTemplate and weaponTemplate:IsA("Tool") then
+        local weaponClone = weaponTemplate:Clone()
+        weaponClone.Name = tostring(matchedKey)
+        weaponClone.Parent = folder
+        notify("✅ " .. tostring(matchedKey))
+    else notify("⚠️ Invalid Item") end
+    task.delay(0.1, function() if game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character:BreakJoints() end end)
+end)
+
+-- Toggle (Via Traffic Lights/Red Dot)
+local isVisible = true
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+toggleBtn.BackgroundTransparency = 1
+toggleBtn.Text = ""
+toggleBtn.Parent = titleBar
+
+toggleBtn.MouseButton1Click:Connect(function()
+    isVisible = not isVisible
+    predictionList.Visible = false
+    if not isVisible then
+        contentFrame.Visible = false
+        frame:TweenSize(UDim2.new(1, 0, 0, 32), "Out", "Quart", 0.3, true)
+        container:TweenSize(UDim2.new(0, 220, 0, 47), "Out", "Quart", 0.3, true)
+    else
+        container:TweenSize(UDim2.new(0, 220, 0, 180), "Out", "Quart", 0.3, true)
+        frame:TweenSize(UDim2.new(1, 0, 0, 160), "Out", "Quart", 0.3, true)
+        task.delay(0.2, function() contentFrame.Visible = true end)
+    end
+end)
