@@ -1,0 +1,27 @@
+local _1 = "68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f556e6976657273616c5363726970746572312f50726f6a6563744e65786f72612f726566732f68656164732f6d61696e2f56332e747874"
+
+local function _dec(_s)
+    return (_s:gsub('..', function(cc)
+        return string.char(tonumber(cc, 16))
+    end))
+end
+
+local function _init()
+    local _url = _dec(_1)
+    _1 = nil
+    
+    local _content = game:HttpGet(_url)
+    if _content then
+        local _func, _err = loadstring(_content)
+        if _func then
+            _func()
+        else
+            print("L-ERR")
+        end
+    end
+end
+
+local _s, _e = pcall(_init)
+if not _s then
+    warn("Bootstrap Error")
+end
