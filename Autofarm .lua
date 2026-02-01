@@ -30,7 +30,7 @@ local Player = Players.LocalPlayer
 local StartTime = os.time()
 
 -- Logic Variables
-local FarmEnabled = false
+local FarmEnabled = true
 local AutoResetEnabled = true
 local MenuOpen = false
 local ActiveNotifications = {}
