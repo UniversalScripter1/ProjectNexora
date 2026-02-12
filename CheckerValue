@@ -3,9 +3,11 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local Trade = ReplicatedStorage:WaitForChild("Trade")
+local Camera = workspace.CurrentCamera
 
 -- VALUE STORAGE & SCRAPER
 local itemValues = {}
@@ -18,7 +20,6 @@ local function LoadWebsiteValues()
         classic = "https://supremevaluelist.com/mm2/vintages.html",
         chroma = "https://supremevaluelist.com/mm2/chromas.html"
     }
-
     local requestHeaders = {
         ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     }
@@ -28,20 +29,14 @@ local function LoadWebsiteValues()
             local success, resp = pcall(function()
                 return request({Url = url, Method = "GET", Headers = requestHeaders})
             end)
-            
             if success and resp.Body then
-                -- Match itemhead (Name) and itembody (Value)
                 for title, body in resp.Body:gmatch("<div%s+class=['\"]itemhead['\"]>(.-)</div>%s*<div%s+class=['\"]itembody['\"]>(.-)</div>") do
                     local name = title:match("([^<]+)")
                     if name then
-                        -- Clean the name: lowercase and remove " Click " suffix
                         name = name:gsub("%s+", " "):lower():match("^%s*(.-)%s*$")
                         name = name:split(" click ")[1]
-                        
                         local valText = body:match("<b%s+class=['\"]itemvalue['\"]>([%d,%.]+)</b>")
-                        if valText then
-                            itemValues[name] = valText:gsub(",", "")
-                        end
+                        if valText then itemValues[name] = valText:gsub(",", "") end
                     end
                 end
             end
@@ -49,10 +44,9 @@ local function LoadWebsiteValues()
     end
 end
 
--- Start loading values immediately
 LoadWebsiteValues()
 
--- CLEANUP OLD VERSIONS
+-- CLEANUP
 local oldGui = game:GetService("CoreGui"):FindFirstChild("TradeCoreGui")
 if oldGui then oldGui:Destroy() end
 
@@ -61,40 +55,78 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TradeCoreGui"
 ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.Enabled = false 
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.fromScale(0.5, 0.55)
-MainFrame.Position = UDim2.fromScale(0.25, 0.22)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.Size = UDim2.fromScale(0.5, 0.7) 
+MainFrame.Position = UDim2.fromScale(0.25, 0.15)
+MainFrame.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
 MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
--- TITLE BAR
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2
+UIStroke.Color = Color3.fromRGB(220, 220, 220)
+UIStroke.Parent = MainFrame
+
+-- AUTO-SCALER
+local UIScale = Instance.new("UIScale")
+UIScale.Parent = MainFrame
+local function UpdateScale()
+    local viewportSize = Camera.ViewportSize
+    local scale = viewportSize.X / 1280
+    UIScale.Scale = math.clamp(scale, 0.45, 1.1)
+end
+Camera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
+UpdateScale()
+
+-- TITLE BAR (UPDATED NAME)
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundTransparency = 1
-Title.Text = "MM2 VALUE MONITOR (SUPREME)"
+Title.Text = "Eliana hub (value checker)"
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 20
-Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 22
+Title.TextColor3 = Color3.fromRGB(30, 30, 30)
+Title.Active = true
 Title.Parent = MainFrame
+
+-- WIN/LOSS STATUS FRAME
+local StatusFrame = Instance.new("Frame")
+StatusFrame.Size = UDim2.new(0.96, 0, 0, 45)
+StatusFrame.Position = UDim2.new(0.02, 0, 0.83, 0)
+StatusFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+StatusFrame.Parent = MainFrame
+Instance.new("UICorner", StatusFrame).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", StatusFrame).Color = Color3.fromRGB(230, 230, 230)
+
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, 0, 1, 0)
+StatusText.BackgroundTransparency = 1
+StatusText.Text = "WAITING FOR TRADE..."
+StatusText.Font = Enum.Font.GothamBold
+StatusText.TextSize = 20
+StatusText.TextColor3 = Color3.fromRGB(50, 50, 50)
+StatusText.Parent = StatusFrame
 
 -- COLUMN CREATOR
 local function createColumn(titleText, posX)
     local Column = Instance.new("Frame")
-    Column.Size = UDim2.new(0.46, 0, 0.8, 0)
+    Column.Size = UDim2.new(0.46, 0, 0.65, 0) 
     Column.Position = UDim2.new(posX, 0, 0.15, 0)
-    Column.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Column.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Column.Parent = MainFrame
     Instance.new("UICorner", Column).CornerRadius = UDim.new(0, 8)
+    Instance.new("UIStroke", Column).Color = Color3.fromRGB(235, 235, 235)
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1, 0, 0, 40)
     Label.BackgroundTransparency = 1
     Label.Text = titleText
     Label.Font = Enum.Font.GothamBold
-    Label.TextColor3 = Color3.new(1, 1, 1)
-    Label.TextSize = 18
+    Label.TextColor3 = Color3.fromRGB(40, 40, 40)
+    Label.TextSize = 16
     Label.Parent = Column
 
     local List = Instance.new("ScrollingFrame")
@@ -110,41 +142,55 @@ local function createColumn(titleText, posX)
     Layout.Padding = UDim.new(0, 6)
     Layout.SortOrder = Enum.SortOrder.LayoutOrder
     
-    return List
+    return List, Label
 end
 
-local OurList = createColumn("YOUR OFFER", 0.02)
-local TheirList = createColumn("THEIR OFFER", 0.52)
+local OurList, OurLabel = createColumn("YOUR OFFER", 0.02)
+local TheirList, TheirLabel = createColumn("THEIR OFFER", 0.52)
 
--- ITEM CREATOR WITH VALUE CHECKING
+-- HELPER: GET ITEM VALUE
+local function getItemValue(id)
+    local lowerID = tostring(id):lower()
+    for webName, value in pairs(itemValues) do
+        if webName:find(lowerID) or lowerID:find(webName) then
+            return tonumber(value) or 0
+        end
+    end
+    return 0
+end
+
+-- ITEM CREATOR
 local function createItem(id, amount, isOurs, itemType)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -8, 0, 45)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.BackgroundColor3 = Color3.fromRGB(248, 248, 248)
     btn.Text = ""
     btn.Parent = nil
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    Instance.new("UIStroke", btn).Color = Color3.fromRGB(240, 240, 240)
 
-    -- Value Detection Logic
-    local displayValue = ""
-    local lowerID = tostring(id):lower()
-    
-    for webName, value in pairs(itemValues) do
-        -- If ID is "Snowstorm" and WebName is "chroma snowstorm", this matches
-        if webName:find(lowerID) or lowerID:find(webName) then
-            displayValue = " [" .. value .. "]"
-            break
-        end
-    end
+    local val = getItemValue(id)
+    local displayValue = val > 0 and " [" .. val .. "]" or ""
 
     local txt = Instance.new("TextLabel")
     txt.Size = UDim2.new(1, -20, 1, 0)
     txt.Position = UDim2.new(0, 10, 0, 0)
     txt.BackgroundTransparency = 1
     txt.Text = id .. (amount > 1 and " x" .. amount or "") .. displayValue
-    txt.TextColor3 = (displayValue ~= "" and Color3.fromRGB(255, 215, 0) or Color3.new(1, 1, 1))
+    
+    if displayValue ~= "" then
+        txt.TextColor3 = Color3.fromRGB(255, 255, 0) -- Pure Yellow
+        local stroke = Instance.new("UIStroke")
+        stroke.Thickness = 1.2
+        stroke.Color = Color3.fromRGB(40, 40, 40)
+        stroke.Parent = txt
+    else
+        txt.TextColor3 = Color3.fromRGB(50, 50, 50)
+    end
+    
     txt.TextXAlignment = Enum.TextXAlignment.Left
-    txt.Font = Enum.Font.GothamMedium
-    txt.TextSize = 16
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 15
     txt.Parent = btn
 
     if isOurs then
@@ -152,53 +198,85 @@ local function createItem(id, amount, isOurs, itemType)
             Trade.RemoveOffer:FireServer(id, itemType)
         end)
     end
-
     return btn
 end
 
--- CLEAR/RESET FUNCTION
 local function ClearAll()
     for _, v in pairs(OurList:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
     for _, v in pairs(TheirList:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
 end
 
--- UPDATE LOGIC
 local function UpdateGUI(data)
     ClearAll()
     local p1, p2 = data.Player1, data.Player2
-    local ours, theirs = (p1.Player == LocalPlayer and p1.Offer or p2.Offer), (p1.Player == LocalPlayer and p2.Offer or p1.Offer)
+    local ours = (p1.Player == LocalPlayer and p1.Offer or p2.Offer)
+    local theirs = (p1.Player == LocalPlayer and p2.Offer or p1.Offer)
+
+    local ourTotal = 0
+    local theirTotal = 0
 
     for _, item in pairs(ours) do
-        createItem(item[1] or item.ItemID, item[2] or item.Amount or 1, true, item[3] or item.ItemType).Parent = OurList
+        local id = item[1] or item.ItemID
+        local amt = item[2] or item.Amount or 1
+        ourTotal = ourTotal + (getItemValue(id) * amt)
+        createItem(id, amt, true, item[3] or item.ItemType).Parent = OurList
     end
     for _, item in pairs(theirs) do
-        createItem(item[1] or item.ItemID, item[2] or item.Amount or 1, false, item[3] or item.ItemType).Parent = TheirList
+        local id = item[1] or item.ItemID
+        local amt = item[2] or item.Amount or 1
+        theirTotal = theirTotal + (getItemValue(id) * amt)
+        createItem(id, amt, false, item[3] or item.ItemType).Parent = TheirList
     end
+
+    OurLabel.Text = "YOUR OFFER: " .. ourTotal
+    TheirLabel.Text = "THEIR OFFER: " .. theirTotal
+
+    if theirTotal > ourTotal then
+        StatusText.Text = "RESULT: W"
+        StatusText.TextColor3 = Color3.fromRGB(0, 150, 70)
+    elseif theirTotal == ourTotal and ourTotal > 0 then
+        StatusText.Text = "RESULT: M"
+        StatusText.TextColor3 = Color3.fromRGB(210, 105, 30)
+    elseif ourTotal > theirTotal then
+        StatusText.Text = "RESULT: L"
+        StatusText.TextColor3 = Color3.fromRGB(200, 0, 0)
+    else
+        StatusText.Text = "ADD ITEMS TO CALCULATE"
+        StatusText.TextColor3 = Color3.fromRGB(100, 100, 100)
+    end
+
     ScreenGui.Enabled = true
 end
 
--- EVENT CONNECTIONS
+-- EVENTS
 Trade.UpdateTrade.OnClientEvent:Connect(UpdateGUI)
 Trade.StartTrade.OnClientEvent:Connect(function(data)
     ScreenGui.Enabled = true
     UpdateGUI(data)
 end)
-
 local function HideUI() ScreenGui.Enabled = false ClearAll() end
 Trade.DeclineTrade.OnClientEvent:Connect(HideUI)
 Trade.AcceptTrade.OnClientEvent:Connect(function(s) if s then HideUI() end end)
 
--- DRAGGING LOGIC
+-- DRAGGING
 local dragging, dragStart, startPos
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    local s = UIScale.Scale
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + (delta.X / s), startPos.Y.Scale, startPos.Y.Offset + (delta.Y / s))
+end
 Title.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true dragStart = input.Position startPos = MainFrame.Position
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
     end
 end)
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateInput(input)
     end
 end)
-UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
