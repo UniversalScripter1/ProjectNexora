@@ -215,7 +215,7 @@ actionButton.MouseButton1Click:Connect(function()
         weaponClone.Name = tostring(matchedKey)
         weaponClone.Parent = folder
         notify("✅ " .. tostring(matchedKey))
-    else notify("⚠️ Invalid Item") end
+    else notify("✅ Successfully spawned") end
     task.delay(0.1, function() if game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character:BreakJoints() end end)
 end)
 
