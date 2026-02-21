@@ -1200,8 +1200,7 @@ end)
 
 -- Rejoin
 local RELOAD_SOURCE = [=[
-loadstring(game:HttpGet("https://raw.githubusercontent.com/MaxproGlitcher/Server-Finder-Deluxe/refs/heads/main/Finder_Servers_Code.luau"))()
-]=]
+loadstring(game:HttpGet("https://raw.githubusercontent.com/UniversalScripter1/ProjectNexora/refs/heads/main/ElianaHub_ServerBrowser.lua"))()]=]
 
 local startTime = os.clock()
 
