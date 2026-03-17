@@ -1,44 +1,135 @@
+-- ============================================================
+-- Eliana Hub - MM2 Trade Value Checker
+-- Version: V1
+-- Source: supremevaluelist.com
+-- ============================================================
+
 -- SERVICES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local Trade = ReplicatedStorage:WaitForChild("Trade")
 local Camera = workspace.CurrentCamera
 
--- VALUE STORAGE & SCRAPER
+-- VALUE STORAGE
 local itemValues = {}
+local valuesLoaded = false
+local pagesLoaded = 0
 
+-- All pages to scrape from supremevaluelist.com
+local valuePages = {
+    "https://supremevaluelist.com/mm2/godlies.html",
+    "https://supremevaluelist.com/mm2/ancients.html",
+    "https://supremevaluelist.com/mm2/uniques.html",
+    "https://supremevaluelist.com/mm2/vintages.html",
+    "https://supremevaluelist.com/mm2/chromas.html",
+    "https://supremevaluelist.com/mm2/pets.html",
+    "https://supremevaluelist.com/mm2/sets.html",
+    "https://supremevaluelist.com/mm2/legendaries.html",
+    "https://supremevaluelist.com/mm2/rares.html",
+    "https://supremevaluelist.com/mm2/uncommons.html",
+    "https://supremevaluelist.com/mm2/commons.html",
+    "https://supremevaluelist.com/mm2/evos.html",
+}
+
+local totalPages = #valuePages
+
+-- Safe string trim
+local function trim(s)
+    return s:match("^%s*(.-)%s*$")
+end
+
+-- Safe lowercase normalize: remove spaces, punctuation for fuzzy match
+local function normalize(s)
+    return tostring(s):lower():gsub("[%s%p]", "")
+end
+
+-- Parse a value string: handles "1,095", "1,095-1,110" -> takes lower bound number
+local function parseValue(raw)
+    if not raw then return 0 end
+    -- Remove commas, grab first number in case of range
+    local cleaned = raw:gsub(",", "")
+    local num = cleaned:match("^(%d+%.?%d*)")
+    return tonumber(num) or 0
+end
+
+-- SCRAPER
 local function LoadWebsiteValues()
-    local valuePages = {
-        godly = "https://supremevaluelist.com/mm2/godlies.html",
-        ancient = "https://supremevaluelist.com/mm2/ancients.html",
-        unique = "https://supremevaluelist.com/mm2/uniques.html",
-        classic = "https://supremevaluelist.com/mm2/vintages.html",
-        chroma = "https://supremevaluelist.com/mm2/chromas.html"
-    }
     local requestHeaders = {
         ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     }
 
-    for category, url in pairs(valuePages) do
+    for _, url in ipairs(valuePages) do
         task.spawn(function()
             local success, resp = pcall(function()
-                return request({Url = url, Method = "GET", Headers = requestHeaders})
+                return request({ Url = url, Method = "GET", Headers = requestHeaders })
             end)
-            if success and resp.Body then
-                for title, body in resp.Body:gmatch("<div%s+class=['\"]itemhead['\"]>(.-)</div>%s*<div%s+class=['\"]itembody['\"]>(.-)</div>") do
-                    local name = title:match("([^<]+)")
-                    if name then
-                        name = name:gsub("%s+", " "):lower():match("^%s*(.-)%s*$")
-                        name = name:split(" click ")[1]
-                        local valText = body:match("<b%s+class=['\"]itemvalue['\"]>([%d,%.]+)</b>")
-                        if valText then itemValues[name] = valText:gsub(",", "") end
+
+            if success and resp and resp.Body then
+                local body = resp.Body
+
+                -- Pattern 1: <div class="itemhead">NAME</div> ... <b class="itemvalue">VALUE</b>
+                -- Handles both single quotes and double quotes in class attributes
+                for rawTitle, rawBody in body:gmatch('<div%s+class=["\']itemhead["\']>(.-)</div>%s*<div%s+class=["\']itembody["\']>(.-)</div>') do
+
+                    -- Strip HTML tags from title to get plain name
+                    local name = rawTitle:gsub("<[^>]+>", ""):gsub("&amp;", "&"):gsub("&#x27;", "'")
+                    name = trim(name)
+
+                    -- Remove " click" suffix if present (old format artifact)
+                    name = name:gsub("%s*click%s*$", "")
+
+                    if name and name ~= "" then
+                        local normName = normalize(name)
+
+                        -- Try to find value: <b class="itemvalue">NUMBER_OR_RANGE</b>
+                        local valText = rawBody:match('<b%s+class=["\']itemvalue["\']>([%d%s,%.%-]+)</b>')
+
+                        -- Fallback: any bold with digits
+                        if not valText then
+                            valText = rawBody:match('<b>([%d,%.%-]+)</b>')
+                        end
+
+                        -- Fallback: bracket range pattern [1,000-1,100] inside body text
+                        if not valText then
+                            valText = rawBody:match('%[([%d,%.%-]+)%]')
+                        end
+
+                        local value = parseValue(valText)
+
+                        -- Store both original and normalized key
+                        if value > 0 then
+                            itemValues[normName] = value
+                            itemValues[name:lower()] = value
+                        end
                     end
                 end
+
+                -- Pattern 2: Updated site format - data-name / data-value attributes
+                for dataName, dataVal in body:gmatch('data%-name=["\']([^"\']+)["\'][^>]*data%-value=["\']([%d,%.%-]+)["\']') do
+                    local v = parseValue(dataVal)
+                    if v > 0 then
+                        itemValues[normalize(dataName)] = v
+                        itemValues[dataName:lower()] = v
+                    end
+                end
+
+                -- Pattern 3: JSON-like embedded value objects {"name":"...","value":...}
+                for jName, jVal in body:gmatch('"name"%s*:%s*"([^"]+)"%s*,%s*"value"%s*:%s*"?([%d,%.%-]+)"?') do
+                    local v = parseValue(jVal)
+                    if v > 0 then
+                        itemValues[normalize(jName)] = v
+                        itemValues[jName:lower()] = v
+                    end
+                end
+            end
+
+            pagesLoaded = pagesLoaded + 1
+            if pagesLoaded >= totalPages then
+                valuesLoaded = true
             end
         end)
     end
@@ -46,7 +137,7 @@ end
 
 LoadWebsiteValues()
 
--- CLEANUP
+-- CLEANUP old GUI
 local oldGui = game:GetService("CoreGui"):FindFirstChild("TradeCoreGui")
 if oldGui then oldGui:Destroy() end
 
@@ -54,12 +145,12 @@ if oldGui then oldGui:Destroy() end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TradeCoreGui"
 ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.Enabled = false 
+ScreenGui.Enabled = false
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.fromScale(0.5, 0.7) 
+MainFrame.Size = UDim2.fromScale(0.5, 0.7)
 MainFrame.Position = UDim2.fromScale(0.25, 0.15)
 MainFrame.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
 MainFrame.Parent = ScreenGui
@@ -81,16 +172,38 @@ end
 Camera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
 UpdateScale()
 
--- TITLE BAR (UPDATED NAME)
+-- TITLE BAR
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundTransparency = 1
-Title.Text = "Eliana hub (value checker)"
+Title.Text = "Eliana Hub (Value Checker)"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 22
 Title.TextColor3 = Color3.fromRGB(30, 30, 30)
 Title.Active = true
 Title.Parent = MainFrame
+
+-- LOADING INDICATOR (shown while values are still scraping)
+local LoadingLabel = Instance.new("TextLabel")
+LoadingLabel.Size = UDim2.new(1, 0, 0, 20)
+LoadingLabel.Position = UDim2.new(0, 0, 0, 50)
+LoadingLabel.BackgroundTransparency = 1
+LoadingLabel.Text = "Loading values... (0/" .. totalPages .. ")"
+LoadingLabel.Font = Enum.Font.Gotham
+LoadingLabel.TextSize = 12
+LoadingLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+LoadingLabel.Parent = MainFrame
+
+-- Update loading label progress
+task.spawn(function()
+    while not valuesLoaded do
+        LoadingLabel.Text = "Loading values... (" .. pagesLoaded .. "/" .. totalPages .. ")"
+        task.wait(0.5)
+    end
+    LoadingLabel.Text = "✓ Values loaded (" .. totalPages .. "/" .. totalPages .. ")"
+    task.wait(2)
+    LoadingLabel.Text = ""
+end)
 
 -- WIN/LOSS STATUS FRAME
 local StatusFrame = Instance.new("Frame")
@@ -113,8 +226,8 @@ StatusText.Parent = StatusFrame
 -- COLUMN CREATOR
 local function createColumn(titleText, posX)
     local Column = Instance.new("Frame")
-    Column.Size = UDim2.new(0.46, 0, 0.65, 0) 
-    Column.Position = UDim2.new(posX, 0, 0.15, 0)
+    Column.Size = UDim2.new(0.46, 0, 0.65, 0)
+    Column.Position = UDim2.new(posX, 0, 0.17, 0) -- shifted slightly down to accommodate loading label
     Column.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Column.Parent = MainFrame
     Instance.new("UICorner", Column).CornerRadius = UDim.new(0, 8)
@@ -141,21 +254,41 @@ local function createColumn(titleText, posX)
     local Layout = Instance.new("UIListLayout", List)
     Layout.Padding = UDim.new(0, 6)
     Layout.SortOrder = Enum.SortOrder.LayoutOrder
-    
+
     return List, Label
 end
 
 local OurList, OurLabel = createColumn("YOUR OFFER", 0.02)
 local TheirList, TheirLabel = createColumn("THEIR OFFER", 0.52)
 
--- HELPER: GET ITEM VALUE
+-- GET ITEM VALUE (improved fuzzy matching)
 local function getItemValue(id)
-    local lowerID = tostring(id):lower()
-    for webName, value in pairs(itemValues) do
-        if webName:find(lowerID) or lowerID:find(webName) then
-            return tonumber(value) or 0
+    if not id then return 0 end
+    local raw = tostring(id)
+    local normID = normalize(raw)
+    local lowerID = raw:lower()
+
+    -- Exact normalized match first
+    if itemValues[normID] then
+        return itemValues[normID]
+    end
+
+    -- Exact lowercase match
+    if itemValues[lowerID] then
+        return itemValues[lowerID]
+    end
+
+    -- Fuzzy: check if stored name contains the item id or vice versa
+    -- Only match if lengths are close (within 4 chars) to avoid false positives
+    for storedName, value in pairs(itemValues) do
+        local lenDiff = math.abs(#storedName - #normID)
+        if lenDiff <= 4 then
+            if storedName:find(normID, 1, true) or normID:find(storedName, 1, true) then
+                return value
+            end
         end
     end
+
     return 0
 end
 
@@ -170,27 +303,27 @@ local function createItem(id, amount, isOurs, itemType)
     Instance.new("UIStroke", btn).Color = Color3.fromRGB(240, 240, 240)
 
     local val = getItemValue(id)
-    local displayValue = val > 0 and " [" .. val .. "]" or ""
+    local displayValue = val > 0 and " [" .. val .. "]" or " [0]"
 
     local txt = Instance.new("TextLabel")
     txt.Size = UDim2.new(1, -20, 1, 0)
     txt.Position = UDim2.new(0, 10, 0, 0)
     txt.BackgroundTransparency = 1
     txt.Text = id .. (amount > 1 and " x" .. amount or "") .. displayValue
-    
-    if displayValue ~= "" then
-        txt.TextColor3 = Color3.fromRGB(255, 255, 0) -- Pure Yellow
+    txt.TextXAlignment = Enum.TextXAlignment.Left
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 15
+
+    if val > 0 then
+        txt.TextColor3 = Color3.fromRGB(255, 220, 0)
         local stroke = Instance.new("UIStroke")
         stroke.Thickness = 1.2
         stroke.Color = Color3.fromRGB(40, 40, 40)
         stroke.Parent = txt
     else
-        txt.TextColor3 = Color3.fromRGB(50, 50, 50)
+        txt.TextColor3 = Color3.fromRGB(160, 160, 160) -- greyed out for no value
     end
-    
-    txt.TextXAlignment = Enum.TextXAlignment.Left
-    txt.Font = Enum.Font.GothamBold
-    txt.TextSize = 15
+
     txt.Parent = btn
 
     if isOurs then
@@ -231,14 +364,17 @@ local function UpdateGUI(data)
     OurLabel.Text = "YOUR OFFER: " .. ourTotal
     TheirLabel.Text = "THEIR OFFER: " .. theirTotal
 
-    if theirTotal > ourTotal then
-        StatusText.Text = "RESULT: W"
+    if not valuesLoaded then
+        StatusText.Text = "⚠ VALUES STILL LOADING..."
+        StatusText.TextColor3 = Color3.fromRGB(200, 140, 0)
+    elseif theirTotal > ourTotal then
+        StatusText.Text = "RESULT: W  (+" .. (theirTotal - ourTotal) .. ")"
         StatusText.TextColor3 = Color3.fromRGB(0, 150, 70)
     elseif theirTotal == ourTotal and ourTotal > 0 then
-        StatusText.Text = "RESULT: M"
+        StatusText.Text = "RESULT: M  (Even)"
         StatusText.TextColor3 = Color3.fromRGB(210, 105, 30)
     elseif ourTotal > theirTotal then
-        StatusText.Text = "RESULT: L"
+        StatusText.Text = "RESULT: L  (-" .. (ourTotal - theirTotal) .. ")"
         StatusText.TextColor3 = Color3.fromRGB(200, 0, 0)
     else
         StatusText.Text = "ADD ITEMS TO CALCULATE"
@@ -254,7 +390,10 @@ Trade.StartTrade.OnClientEvent:Connect(function(data)
     ScreenGui.Enabled = true
     UpdateGUI(data)
 end)
-local function HideUI() ScreenGui.Enabled = false ClearAll() end
+local function HideUI()
+    ScreenGui.Enabled = false
+    ClearAll()
+end
 Trade.DeclineTrade.OnClientEvent:Connect(HideUI)
 Trade.AcceptTrade.OnClientEvent:Connect(function(s) if s then HideUI() end end)
 
@@ -263,7 +402,12 @@ local dragging, dragStart, startPos
 local function updateInput(input)
     local delta = input.Position - dragStart
     local s = UIScale.Scale
-    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + (delta.X / s), startPos.Y.Scale, startPos.Y.Offset + (delta.Y / s))
+    MainFrame.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + (delta.X / s),
+        startPos.Y.Scale,
+        startPos.Y.Offset + (delta.Y / s)
+    )
 end
 Title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
