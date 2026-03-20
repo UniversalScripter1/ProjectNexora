@@ -132,10 +132,11 @@ function Library:Asset(rbx)
 end
 
 function Library:NewRows(Parent, Title, Desciption)
+    Desciption = (Desciption and Desciption ~= "") and Desciption or ""
     local Rows = Library:Create("Frame", {
         Name = "Rows",
         Parent = Parent,
-        BackgroundColor3 = Color3.fromRGB(235, 228, 252),
+        BackgroundColor3 = Color3.fromRGB(240, 233, 255),
         BorderColor3 = Color3.fromRGB(0, 0, 0),
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 40)
@@ -143,7 +144,7 @@ function Library:NewRows(Parent, Title, Desciption)
 
     Library:Create("UIStroke", {
         Parent = Rows,
-        Color = Color3.fromRGB(190, 160, 230),
+        Color = Color3.fromRGB(185, 155, 225),
         Thickness = 0.5
     })
 
@@ -240,7 +241,7 @@ function Library:NewRows(Parent, Title, Desciption)
         Font = Enum.Font.GothamSemibold,
         RichText = true,
         Text = Title,
-        TextColor3 = Color3.fromRGB(40, 10, 80),
+        TextColor3 = Color3.fromRGB(50, 15, 95),
         TextSize = 12,
         TextStrokeTransparency = 0.699999988079071,
         TextXAlignment = Enum.TextXAlignment.Left
@@ -251,9 +252,9 @@ function Library:NewRows(Parent, Title, Desciption)
     Library:Create("UIGradient", {
         Parent = Title_1,
         Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(163, 163, 163)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 100, 100))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 60, 210)),
+            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(155, 95, 225)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(185, 140, 245))
         },
         Rotation = 90
     })
@@ -271,10 +272,10 @@ function Library:NewRows(Parent, Title, Desciption)
         Font = Enum.Font.GothamMedium,
         RichText = true,
         Text = Desciption,
-        TextColor3 = Color3.fromRGB(40, 10, 80),
+        TextColor3 = Color3.fromRGB(80, 30, 140),
         TextSize = 10,
         TextStrokeTransparency = 0.699999988079071,
-        TextTransparency = 0.6,
+        TextTransparency = Desciption == "" and 1 or 0.3,
         TextXAlignment = Enum.TextXAlignment.Left
     })
 
@@ -296,7 +297,7 @@ function Library:Window(Args)
         Name = "Background",
         Parent = Xova,
         AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Color3.fromRGB(245, 240, 255),
+        BackgroundColor3 = Color3.fromRGB(250, 246, 255),
         BorderColor3 = Color3.fromRGB(0, 0, 0),
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -356,7 +357,7 @@ function Library:Window(Args)
         Position = UDim2.new(0, 25, 0.5, 1),
         Size = UDim2.new(0, 27, 0, 27),
         Image = "rbxassetid://130391877219356",
-        ImageColor3 = Color3.fromRGB(120, 0, 220),
+        ImageColor3 = Color3.fromRGB(130, 60, 210),
         Visible = false
     })
 
@@ -364,8 +365,8 @@ function Library:Window(Args)
         Parent = Return_1,
         Rotation = 90,
         Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(56, 56, 56))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 170, 245)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 80, 215))
         },
     })
 
@@ -427,7 +428,7 @@ function Library:Window(Args)
         Font = Enum.Font.GothamBold,
         RichText = true,
         Text = Title,
-        TextColor3 = Color3.fromRGB(120, 0, 220),
+        TextColor3 = Color3.fromRGB(130, 60, 210),
         TextSize = 14,
         TextStrokeTransparency = 0.699999988079071,
         TextXAlignment = Enum.TextXAlignment.Left
@@ -436,9 +437,9 @@ function Library:Window(Args)
     Library:Create("UIGradient", {
         Parent = Title_1,
         Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(163, 163, 163)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 100, 100))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 60, 210)),
+            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(155, 95, 225)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(185, 140, 245))
         },
         Rotation = 90
     })
@@ -456,7 +457,7 @@ function Library:Window(Args)
         Font = Enum.Font.GothamMedium,
         RichText = true,
         Text = SubTitle,
-        TextColor3 = Color3.fromRGB(40, 10, 80),
+        TextColor3 = Color3.fromRGB(50, 15, 95),
         TextSize = 10,
         TextStrokeTransparency = 0.699999988079071,
         TextTransparency = 0.6,
@@ -467,6 +468,7 @@ function Library:Window(Args)
     local Expires_1 = Library:Create("Frame", {
         Name = "Expires",
         Parent = HeadScale_1,
+        Visible = false,
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
         BorderColor3 = Color3.fromRGB(0, 0, 0),
@@ -493,16 +495,16 @@ function Library:Window(Args)
         BorderSizePixel = 0,
         Size = UDim2.new(0, 20, 0, 20),
         Image = "rbxassetid://100865348188048",
-        ImageColor3 = Color3.fromRGB(120, 0, 220),
+        ImageColor3 = Color3.fromRGB(130, 60, 210),
         LayoutOrder = 1
     })
 
     Library:Create("UIGradient", {
         Parent = Asset_1,
         Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(163, 163, 163)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 100, 100))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 60, 210)),
+            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(155, 95, 225)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(185, 140, 245))
         },
         Rotation = 90
     })
@@ -539,7 +541,7 @@ function Library:Window(Args)
         Font = Enum.Font.GothamSemibold,
         RichText = true,
         Text = "Expires at",
-        TextColor3 = Color3.fromRGB(120, 0, 220),
+        TextColor3 = Color3.fromRGB(130, 60, 210),
         TextSize = 13,
         TextStrokeTransparency = 0.699999988079071,
         TextXAlignment = Enum.TextXAlignment.Right
@@ -548,9 +550,9 @@ function Library:Window(Args)
     Library:Create("UIGradient", {
         Parent = Title_2,
         Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(163, 163, 163)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 100, 100))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 60, 210)),
+            ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(155, 95, 225)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(185, 140, 245))
         },
         Rotation = 90
     })
@@ -568,7 +570,7 @@ function Library:Window(Args)
         Font = Enum.Font.GothamMedium,
         RichText = true,
         Text = "00:00:00 Hours",
-        TextColor3 = Color3.fromRGB(40, 10, 80),
+        TextColor3 = Color3.fromRGB(50, 15, 95),
         TextSize = 10,
         TextStrokeTransparency = 0.699999988079071,
         TextTransparency = 0.6,
@@ -664,7 +666,7 @@ function Library:Window(Args)
         local NewTabs = Library:Create("Frame", {
             Name = "NewTabs",
             Parent = MainTabsScrolling,
-            BackgroundColor3 = Color3.fromRGB(225, 215, 248),
+            BackgroundColor3 = Color3.fromRGB(233, 224, 252),
             BorderColor3 = Color3.fromRGB(0, 0, 0),
             BorderSizePixel = 0,
             Size = UDim2.new(0, 230, 0, 55)
@@ -679,7 +681,7 @@ function Library:Window(Args)
 
         Library:Create("UIStroke", {
             Parent = NewTabs,
-            Color = Color3.fromRGB(180, 130, 255),
+            Color = Color3.fromRGB(170, 130, 220),
             Thickness = 1
         })
 
@@ -692,7 +694,7 @@ function Library:Window(Args)
             BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 1, 0),
             Image = "rbxassetid://125411502674016",
-            ImageColor3 = Color3.fromRGB(120, 0, 220),
+            ImageColor3 = Color3.fromRGB(130, 60, 210),
             ScaleType = Enum.ScaleType.Crop
         })
 
@@ -734,15 +736,15 @@ function Library:Window(Args)
             LayoutOrder = -1,
             Size = UDim2.new(0, 25, 0, 25),
             Image = Library:Asset(Icon),
-            ImageColor3 = Color3.fromRGB(120, 0, 220)
+            ImageColor3 = Color3.fromRGB(130, 60, 210)
         })
 
         Library:Create("UIGradient", {
             Parent = Icon_1,
             Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(163, 163, 163)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 100, 100))
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 60, 210)),
+                ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(155, 95, 225)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(185, 140, 245))
             },
             Rotation = 90
         })
@@ -776,7 +778,7 @@ function Library:Window(Args)
             Font = Enum.Font.GothamBold,
             RichText = true,
             Text = Title,
-            TextColor3 = Color3.fromRGB(120, 0, 220),
+            TextColor3 = Color3.fromRGB(130, 60, 210),
             TextSize = 15,
             TextStrokeTransparency = 0.449999988079071,
             TextXAlignment = Enum.TextXAlignment.Left
@@ -785,9 +787,9 @@ function Library:Window(Args)
         Library:Create("UIGradient", {
             Parent = Title_1,
             Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(163, 163, 163)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 100, 100))
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 60, 210)),
+                ColorSequenceKeypoint.new(0.749568, Color3.fromRGB(155, 95, 225)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(185, 140, 245))
             },
             Rotation = 90
         })
@@ -803,7 +805,7 @@ function Library:Window(Args)
             Font = Enum.Font.GothamMedium,
             RichText = true,
             Text = Desc,
-            TextColor3 = Color3.fromRGB(40, 10, 80),
+            TextColor3 = Color3.fromRGB(50, 15, 95),
             TextSize = 10,
             TextStrokeTransparency = 0.5,
             TextTransparency = 0.20000000298023224,
@@ -897,7 +899,7 @@ function Library:Window(Args)
                 Font = Enum.Font.GothamBold,
                 RichText = true,
                 Text = " " .. Text,
-                TextColor3 = Color3.fromRGB(40, 10, 80),
+                TextColor3 = Color3.fromRGB(50, 15, 95),
                 TextSize = 15,
                 TextStrokeTransparency = 0.7,
                 TextXAlignment = Enum.TextXAlignment.Left
@@ -936,7 +938,7 @@ function Library:Window(Args)
                 Position = UDim2.new(0, 0.5, 0.5, 1),
                 Size = UDim2.new(0, 20, 0, 20),
                 Image = Library:Asset(Icon),
-                ImageColor3 = Color3.fromRGB(120, 0, 220),
+                ImageColor3 = Color3.fromRGB(130, 60, 210),
             })
 
             Library:Create("UIGradient", {
@@ -994,7 +996,7 @@ function Library:Window(Args)
                 Font = Enum.Font.GothamSemibold,
                 RichText = true,
                 Text = RightText,
-                TextColor3 = Color3.fromRGB(40, 10, 80),
+                TextColor3 = Color3.fromRGB(50, 15, 95),
                 TextSize = 12,
                 TextStrokeTransparency = 0.699999988079071,
                 TextXAlignment = Enum.TextXAlignment.Right
@@ -1026,7 +1028,7 @@ function Library:Window(Args)
             local Button = Library:Create("Frame", {
                 Name = "Button",
                 Parent = Right,
-                BackgroundColor3 = Color3.fromRGB(120, 0, 220),
+                BackgroundColor3 = Color3.fromRGB(130, 60, 210),
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 BorderSizePixel = 0,
                 Position = UDim2.new(0.730158806, 0, 0.166666672, 0),
@@ -1041,8 +1043,8 @@ function Library:Window(Args)
             Library:Create("UIGradient", {
                 Parent = Button,
                 Color = ColorSequence.new{
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(56, 56, 56))
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 170, 245)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 80, 215))
                 },
                 Rotation = 90
             })
@@ -1060,7 +1062,7 @@ function Library:Window(Args)
                 Font = Enum.Font.GothamSemibold,
                 RichText = true,
                 Text = Text,
-                TextColor3 = Color3.fromRGB(40, 10, 80),
+                TextColor3 = Color3.fromRGB(50, 15, 95),
                 TextSize = 11,
                 TextStrokeTransparency = 0.699999988079071
             })
@@ -1095,7 +1097,7 @@ function Library:Window(Args)
             local Background = Library:Create("Frame", {
                 Name = "Background",
                 Parent = Right,
-                BackgroundColor3 = Color3.fromRGB(225, 215, 248),
+                BackgroundColor3 = Color3.fromRGB(233, 224, 252),
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 BorderSizePixel = 0,
                 Size = UDim2.new(0, 20, 0, 20)
@@ -1103,7 +1105,7 @@ function Library:Window(Args)
             
             local UIStroke = Library:Create("UIStroke", {
                 Parent = Background,
-                Color = Color3.fromRGB(190, 160, 230),
+                Color = Color3.fromRGB(185, 155, 225),
                 Thickness = 0.5
             })
 
@@ -1116,7 +1118,7 @@ function Library:Window(Args)
                 Name = "Highligh",
                 Parent = Background,
                 AnchorPoint = Vector2.new(0.5, 0.5),
-                BackgroundColor3 = Color3.fromRGB(120, 0, 220),
+                BackgroundColor3 = Color3.fromRGB(130, 60, 210),
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 BorderSizePixel = 0,
                 Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -1131,8 +1133,8 @@ function Library:Window(Args)
             Library:Create("UIGradient", {
                 Parent = Highligh_1,
                 Color = ColorSequence.new{
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(56, 56, 56))
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 170, 245)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 80, 215))
                 },
                 Rotation = 90
             })
@@ -1162,7 +1164,7 @@ function Library:Window(Args)
                     Callback(Data.Value)
 
                     ImageLabel_1.Size = UDim2.new(0.85, 0, 0.85, 0)
-                    TitleLabel.TextColor3 = Color3.fromRGB(120, 0, 220)
+                    TitleLabel.TextColor3 = Color3.fromRGB(130, 60, 210)
 
                     Library:Tween({ v = Highligh_1, t = 0.5, s = "Exponential", d = "Out", g = { BackgroundTransparency = 0 } }):Play()
                     Library:Tween({ v = ImageLabel_1, t = 0.5, s = "Exponential", d = "Out", g = { ImageTransparency = 0 } }):Play()
@@ -1171,7 +1173,7 @@ function Library:Window(Args)
                 else
                     Callback(Data.Value)
 
-                    TitleLabel.TextColor3 = Color3.fromRGB(40, 10, 80)
+                    TitleLabel.TextColor3 = Color3.fromRGB(50, 15, 95)
                     Library:Tween({ v = Highligh_1, t = 0.5, s = "Exponential", d = "Out", g = { BackgroundTransparency = 1 } }):Play()
                     Library:Tween({ v = ImageLabel_1, t = 0.5, s = "Exponential", d = "Out", g = { ImageTransparency = 1 } }):Play()
                     UIStroke.Thickness = 0.5
@@ -1220,7 +1222,7 @@ function Library:Window(Args)
             local Slider_1 = Library:Create("Frame", {
                 Name = "Slider",
                 Parent = PageScrolling_1,
-                BackgroundColor3 = Color3.fromRGB(235, 228, 252),
+                BackgroundColor3 = Color3.fromRGB(240, 233, 255),
                 BackgroundTransparency = 0,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 42),
@@ -1234,7 +1236,7 @@ function Library:Window(Args)
 
             Library:Create("UIStroke", {
                 Parent = Slider_1,
-                Color = Color3.fromRGB(190, 160, 230),
+                Color = Color3.fromRGB(185, 155, 225),
                 Thickness = 0.5
             })
 
@@ -1281,7 +1283,7 @@ function Library:Window(Args)
                 Font = Enum.Font.GothamSemibold,
                 RichText = true,
                 Text = Title,
-                TextColor3 = Color3.fromRGB(40, 10, 80),
+                TextColor3 = Color3.fromRGB(50, 15, 95),
                 TextSize = 12,
                 TextStrokeTransparency = 0.699999988079071,
                 TextXAlignment = Enum.TextXAlignment.Left
@@ -1323,7 +1325,7 @@ function Library:Window(Args)
                 Name = "ColorBar",
                 Parent = Slide_1,
                 AnchorPoint = Vector2.new(0.5, 0.5),
-                BackgroundColor3 = Color3.fromRGB(225, 215, 248),
+                BackgroundColor3 = Color3.fromRGB(233, 224, 252),
                 BorderSizePixel = 0,
                 Position = UDim2.new(0.5, 0, 0.5, 0),
                 Size = UDim2.new(1, 0, 0, 5),
@@ -1338,7 +1340,7 @@ function Library:Window(Args)
             local ColorBar_2 = Library:Create("Frame", {
                 Name = "ColorBar",
                 Parent = ColorBar_1,
-                BackgroundColor3 = Color3.fromRGB(120, 0, 220),
+                BackgroundColor3 = Color3.fromRGB(130, 60, 210),
                 BorderSizePixel = 0,
                 Size = UDim2.new(0, 0, 1, 0),
                 Selectable = false
@@ -1382,14 +1384,14 @@ function Library:Window(Args)
                 Font = Enum.Font.GothamMedium,
                 PlaceholderColor3 = Color3.fromRGB(178, 178, 178),
                 Text = tostring(Value),
-                TextColor3 = Color3.fromRGB(40, 10, 80),
+                TextColor3 = Color3.fromRGB(50, 15, 95),
                 TextSize = 11,
                 TextTransparency = 0.5,
                 TextTruncate = Enum.TextTruncate.AtEnd,
                 TextXAlignment = Enum.TextXAlignment.Right
             })
 
-            local pink  = Color3.fromRGB(120, 0, 220)
+            local pink  = Color3.fromRGB(130, 60, 210)
             local white = Color3.fromRGB(255, 255, 255)
             local dragging = false
 
@@ -1516,7 +1518,7 @@ function Library:Window(Args)
             local Front_1 = Library:Create("Frame", {
                 Name = "Front",
                 Parent = Input_1,
-                BackgroundColor3 = Color3.fromRGB(235, 228, 252),
+                BackgroundColor3 = Color3.fromRGB(240, 233, 255),
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, -35, 1, 0),
                 Selectable = false
@@ -1529,7 +1531,7 @@ function Library:Window(Args)
 
             Library:Create("UIStroke", {
                 Parent = Front_1,
-                Color = Color3.fromRGB(190, 160, 230),
+                Color = Color3.fromRGB(185, 155, 225),
                 Thickness = 0.5
             })
 
@@ -1553,7 +1555,7 @@ function Library:Window(Args)
             local Enter_1 = Library:Create("Frame", {
                 Name = "Enter",
                 Parent = Input_1,
-                BackgroundColor3 = Color3.fromRGB(120, 0, 220),
+                BackgroundColor3 = Color3.fromRGB(130, 60, 210),
                 BorderSizePixel = 0,
                 Size = UDim2.new(0, 30, 0, 30),
                 Selectable = false
@@ -1567,8 +1569,8 @@ function Library:Window(Args)
             Library:Create("UIGradient", {
                 Parent = Enter_1,
                 Color = ColorSequence.new{
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(56, 56, 56))
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 170, 245)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 80, 215))
                 },
                 Rotation = 90
             })
@@ -1723,7 +1725,7 @@ function Library:Window(Args)
                     Font = Enum.Font.GothamSemibold,
                     RichText = true,
                     Text = Title,
-                    TextColor3 = Color3.fromRGB(120, 0, 220),
+                    TextColor3 = Color3.fromRGB(130, 60, 210),
                     TextSize = 14,
                     TextStrokeTransparency = 0.699999988079071,
                     TextXAlignment = Enum.TextXAlignment.Left
@@ -1753,7 +1755,7 @@ function Library:Window(Args)
                     Font = Enum.Font.GothamMedium,
                     RichText = true,
                     Text = GetText(),
-                    TextColor3 = Color3.fromRGB(40, 10, 80),
+                    TextColor3 = Color3.fromRGB(50, 15, 95),
                     TextSize = 10,
                     TextStrokeTransparency = 0.699999988079071,
                     TextTransparency = 0.6,
@@ -1784,7 +1786,7 @@ function Library:Window(Args)
                 local Front_1 = Library:Create("Frame", {
                     Name = "Front",
                     Parent = Input_1,
-                    BackgroundColor3 = Color3.fromRGB(235, 228, 252),
+                    BackgroundColor3 = Color3.fromRGB(240, 233, 255),
                     BorderSizePixel = 0,
                     Size = UDim2.new(1, 0, 1, 0),
                     ZIndex = 500,
@@ -1798,7 +1800,7 @@ function Library:Window(Args)
 
                 Library:Create("UIStroke", {
                     Parent = Front_1,
-                    Color = Color3.fromRGB(190, 160, 230),
+                    Color = Color3.fromRGB(185, 155, 225),
                     Thickness = 0.5
                 })
 
@@ -1817,7 +1819,7 @@ function Library:Window(Args)
                     PlaceholderColor3 = Color3.fromRGB(55, 55, 55),
                     PlaceholderText = "Search",
                     Text = "",
-                    TextColor3 = Color3.fromRGB(40, 10, 80),
+                    TextColor3 = Color3.fromRGB(50, 15, 95),
                     TextSize = 11,
                     TextXAlignment = Enum.TextXAlignment.Left
                 })
@@ -1957,7 +1959,7 @@ function Library:Window(Args)
                         Font = Enum.Font.GothamSemibold,
                         RichText = true,
                         Text = tostring(Name),
-                        TextColor3 = Color3.fromRGB(40, 10, 80),
+                        TextColor3 = Color3.fromRGB(50, 15, 95),
                         TextSize = 11,
                         TextStrokeTransparency = 0.699999988079071,
                         TextXAlignment = Enum.TextXAlignment.Left
@@ -1974,7 +1976,7 @@ function Library:Window(Args)
                     })
 
                     local function OnValue(value)
-                        Title_2.TextColor3 = value and Color3.fromRGB(120, 0, 220) or Color3.fromRGB(255, 255, 255)
+                        Title_2.TextColor3 = value and Color3.fromRGB(130, 60, 210) or Color3.fromRGB(255, 255, 255)
 
                         if value then
                             Library:Tween({
@@ -2026,7 +2028,7 @@ function Library:Window(Args)
                         else
                             for _, v in pairs(List_1:GetChildren()) do
                                 if v:IsA("Frame") and v.Name == 'NewList' then
-                                    v.Title.TextColor3 = Color3.fromRGB(40, 10, 80)
+                                    v.Title.TextColor3 = Color3.fromRGB(50, 15, 95)
                                     Library:Tween({
                                         v = v,
                                         t = 0.2,
@@ -2161,7 +2163,7 @@ function Library:Window(Args)
             local Pillow_1 = Library:Create("TextButton", {
                 Name = "Pillow",
                 Parent = ToggleScreen,
-                BackgroundColor3 = Color3.fromRGB(245, 240, 255),
+                BackgroundColor3 = Color3.fromRGB(250, 246, 255),
                 BorderSizePixel = 0,
                 Position = UDim2.new(0.06, 0, 0.15, 0),
                 Size = UDim2.new(0, 50, 0, 50),
